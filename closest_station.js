@@ -1,4 +1,5 @@
 var dsvPromise = import('d3-dsv');
+var ProgressBar = require('progress');
 var fs = require('fs');
 var stations = JSON.parse(fs.readFileSync('good-stations.json', 'utf8'));
 
@@ -54,9 +55,14 @@ if (require.main === module) {
 ${processed.csv}`);
     }
 
+    var bar =
+        new ProgressBar('  Processing [:bar] :rate fps :percent :etas',
+                        {complete: '=', incomplete: ' ', width: 20, total: stations.length, renderThrottle: 2000});
+
     for (const s of stations) {
       const processed = await stationToPercentile(s, parentPath);
       s.summary = processed.csv;
+      bar.tick();
     }
     fs.writeFileSync('good-stations-summary.json', JSON.stringify(stations));
   })()
