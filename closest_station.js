@@ -34,8 +34,14 @@ async function stationToPercentile(station, parentPath = '.') {
   var lows = quantile(ps, tmin).map(o => o / 10);
   var his = quantile(ps, tmax).map(o => o / 10);
 
-  var csv = dsv.csvFormat(ps.map((p, i) => ({name, percentile: `${p * 100}%`, low: lows[i], high: his[i]})));
-  return {ps, lows, his, csv};
+  var summary = ps.map((p, i) => ({name, percentile: `${p * 100}%`, low: lows[i], high: his[i]}));
+  var csv = dsv.csvFormat(summary);
+
+  var summaryKeys = Object.keys(summary[0]).filter(x => x !== 'name');
+  var md = `| ${summaryKeys.join(' | ')} |
+| ${summaryKeys.map(_ => '---').join(' | ')} |
+${summary.map(o => '| ' + summaryKeys.map(k => o[k]).join(' | ') + ' |').join('\n')}`;
+  return {ps, lows, his, csv, md};
 }
 
 if (require.main === module) {
@@ -52,7 +58,9 @@ if (require.main === module) {
     for (const s of handful) {
       const processed = await stationToPercentile(s, parentPath);
       console.log(`## ${s.desc}
-${processed.csv}`);
+${processed.md}
+
+`);
     }
 
     var bar =
