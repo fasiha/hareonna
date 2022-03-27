@@ -36,3 +36,6 @@ var goodStations = stations.filter(station => {
 
 console.log({inv: idToInventories.size, stations: stations.length, goodStations: goodStations.length});
 fs.writeFileSync('good-stations.json', JSON.stringify(goodStations));
+var urls = goodStations.map(
+    o => `https://www.ncei.noaa.gov/data/global-historical-climatology-network-daily/access/${o.name}.csv`);
+fs.writeFileSync('good-stations-urls.txt', urls.join('\n'))
