@@ -30,6 +30,9 @@ async function stationToPercentile(station, parentPath = '.') {
   var tmin = newEnough.map(o => o.TMIN ? +o.TMIN : undefined);
   var tmax = newEnough.map(o => o.TMAX ? +o.TMAX : undefined);
 
+  var bads = [tmin, tmax].map(v => v.filter(x => x === undefined).length);
+  var badPcts = bads.map(x => x / newEnough.length);
+
   var ps = [0, 0.025, 0.05, 0.1, 0.5, 0.9, 0.95, 0.975, 1];
   var lows = quantile(ps, tmin).map(o => o / 10);
   var his = quantile(ps, tmax).map(o => o / 10);
@@ -41,7 +44,7 @@ async function stationToPercentile(station, parentPath = '.') {
   var md = `| ${summaryKeys.join(' | ')} |
 | ${summaryKeys.map(_ => '---').join(' | ')} |
 ${summary.map(o => '| ' + summaryKeys.map(k => o[k]).join(' | ') + ' |').join('\n')}`;
-  return {ps, lows, his, csv, md};
+  return {ps, lows, his, csv, md, bads, badPcts};
 }
 
 if (require.main === module) {
@@ -68,8 +71,7 @@ ${processed.md}
                         {complete: '=', incomplete: ' ', width: 20, total: stations.length, renderThrottle: 2000});
 
     for (const s of stations) {
-      const processed = await stationToPercentile(s, parentPath);
-      s.summary = processed.csv;
+      s.summary = await stationToPercentile(s, parentPath);
       bar.tick();
     }
     fs.writeFileSync('good-stations-summary.json', JSON.stringify(stations));
