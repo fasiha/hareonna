@@ -1,5 +1,10 @@
 ## Steps
-Install Node.
+Install Node and Git. Run
+```
+git clone https://github.com/fasiha/hareonna.git
+cd hareonna
+npm i
+```
 
 Download
 - https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt (10 MB)
@@ -16,9 +21,13 @@ Now, if you have `xargs` and `shuf` and `wget`, run:
 ```
 cat good-stations-urls.txt | shuf | xargs -n10 -P4 wget -nc --continue
 ```
-(If this doesn't work, use `wget -nc --continue -i good-stations-urls.txt`.)
+(If you don't have all these fancy command line utilities, use `wget -nc --continue -i good-stations-urls.txt`.)
 
 It's going to download ~40 GB.
+
+Then there's two options, as of now:
+- Load recent (~10 year) CSV temperature data into SQLite: `node csv2db.js`
+- Process the CSVs themselves to extract percentiles: `node closest_station.js`
 
 ## Notes
 
