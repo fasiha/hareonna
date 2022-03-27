@@ -36,6 +36,14 @@ Finally, you need a bunch of Python to render some maps (coming soon to JavaScri
 python plots.py
 ```
 
+This generates a list of most similar weather stations: [closest.md](./closest.md).
+
+And some plots: these are *very* hard to read, sorry! I'll make them into browser apps shortly:
+
+![Zoomed in temperatures](./zoom.png)
+
+![Map](./map.png)
+
 ## Notes
 
 All: https://www.ncei.noaa.gov/data/global-historical-climatology-network-daily/access/
