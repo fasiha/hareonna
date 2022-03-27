@@ -1,5 +1,5 @@
 import json
-import pylab as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from geo import distance
 
@@ -24,13 +24,14 @@ for i, [station, dist] in enumerate(zip(stations, distances)):
   assert ps[0] == s['ps'][loidx]
   assert ps[1] == s['ps'][hiidx]
   tempDist = np.sum((closestTemp - [s['lows'][loidx], s['his'][hiidx]])**2)
-  stats.append([s['lows'][loidx], s['his'][hiidx], tempDist, dist, i])
+  stats.append(
+      [s['lows'][loidx], s['his'][hiidx], tempDist, dist, i, station['lat'], station['lon']])
 
 stats.sort(key=lambda v: v[2])  # sort by temp L2 distance
 sarr = np.array(stats)
 
 with open('closest.md', 'w') as fid:
-  for rank, [lo, hi, tempd, d, i] in enumerate(stats[:250]):
+  for rank, [lo, hi, tempd, d, i, *rest] in enumerate(stats[:250]):
     s = stations[i]
     url = f'http://www.openstreetmap.org/?mlat={s["lat"]}&mlon={s["lon"]}&zoom=7'
     out = f'''## № {rank+1}: {lo} °C, {hi} °C: [{s["desc"]}]({url})
@@ -61,3 +62,23 @@ plt.savefig('full.png', dpi=300)
 plt.xlim(closestTemp[0] + 1.75 * np.array([-1, 1]))
 plt.ylim(closestTemp[1] + 1.75 * np.array([-1, 1]))
 plt.savefig('zoom.png', dpi=300)
+
+# map
+sarr = np.flipud(sarr)
+sizes = np.log10(1 / (.001 + sarr[:, 2]))
+sizes = 2 * (sizes - np.min(sizes)) + 1
+
+plt.figure()
+plt.scatter(sarr[:, 6], sarr[:, 5], c=0.5 * np.log10(.0001 + sarr[:, 2]), s=sizes**2, alpha=0.5)
+c = plt.gci().get_clim()
+plt.gci().set_clim((c[0], c[0] + 3))
+
+from mpl_toolkits.basemap import Basemap
+
+map = Basemap(projection='cyl', resolution='h')
+map.drawmapboundary(fill_color='white')
+map.drawcoastlines()
+
+plt.axis([-180, 180, -60, 60])
+plt.tight_layout()
+plt.savefig('map.png', dpi=300)

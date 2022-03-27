@@ -25,9 +25,16 @@ cat good-stations-urls.txt | shuf | xargs -n10 -P4 wget --continue
 
 It's going to download ~40 GB.
 
-Then there's two options, as of now:
-- Load recent (~10 year) CSV temperature data into SQLite: `node csv2db.js`
-- Process the CSVs themselves to extract percentiles: `node closest_station.js`
+Process the CSVs themselves to extract percentiles:
+```
+node closest_station.js
+```
+
+Finally, you need a bunch of Python to render some maps (coming soon to JavaScript/browser):
+```bash
+# requires numpy, matplotlib, basemap, basemap-data-hires (conda-forge package)
+python plots.py
+```
 
 ## Notes
 
