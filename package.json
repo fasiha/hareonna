@@ -1,14 +1,14 @@
 {
-  "name": "weather-ghcnd-meteorological",
+  "name": "hareonna",
   "version": "1.0.0",
-  "description": "Install Node.",
+  "description": "NOAA GHCNd meteorological-historical analysis",
   "main": "closest_station.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Unlicense",
   "dependencies": {
     "better-sqlite3": "^7.5.0",
     "d3-dsv": "^3.0.1",
