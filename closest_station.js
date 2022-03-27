@@ -44,7 +44,7 @@ async function stationToPercentile(station, parentPath = '.') {
   var md = `| ${summaryKeys.join(' | ')} |
 | ${summaryKeys.map(_ => '---').join(' | ')} |
 ${summary.map(o => '| ' + summaryKeys.map(k => o[k]).join(' | ') + ' |').join('\n')}`;
-  return {ps, lows, his, csv, md, bads, badPcts};
+  return {ps, lows, his, csv, md, bads, badPcts, totalCount: newEnough.length};
 }
 
 if (require.main === module) {
@@ -70,10 +70,14 @@ ${processed.md}
         new ProgressBar('  Processing [:bar] :rate fps :percent :etas',
                         {complete: '=', incomplete: ' ', width: 20, total: stations.length, renderThrottle: 2000});
 
-    for (const s of stations) {
-      s.summary = await stationToPercentile(s, parentPath);
+    let stationsToSummarize = stations;
+    if (fs.existsSync('good-stations-summary.json')) {
+      stationsToSummarize = JSON.parse(fs.readFileSync('good-stations-summary.json', 'utf8'));
+    }
+    for (const s of stationsToSummarize) {
+      if (!('summary' in s)) { s.summary = await stationToPercentile(s, parentPath); }
       bar.tick();
     }
-    fs.writeFileSync('good-stations-summary.json', JSON.stringify(stations));
+    fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize));
   })()
 }

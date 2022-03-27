@@ -19,9 +19,9 @@ This will generate a couple of JSON files and a text file.
 
 Now, if you have `xargs` and `shuf` and `wget`, run:
 ```
-cat good-stations-urls.txt | shuf | xargs -n10 -P4 wget -nc --continue
+cat good-stations-urls.txt | shuf | xargs -n10 -P4 wget --continue
 ```
-(If you don't have all these fancy command line utilities, use `wget -nc --continue -i good-stations-urls.txt`.)
+(If you don't have all these fancy command line utilities, use `wget --continue -i good-stations-urls.txt`.)
 
 It's going to download ~40 GB.
 
