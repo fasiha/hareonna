@@ -24,7 +24,8 @@ async function process(path = '.') {
   var today = new Date();
   var oldest = `${today.getUTCFullYear() - YEARS_AGO}-01-01`;
 
-  var bar = new ProgressBar(':bar', {total: stations.length});
+  var bar = new ProgressBar('  downloading [:bar] :rate fps :percent :etas',
+                            {complete: '=', incomplete: ' ', width: 20, total: stations.length, renderThrottle: 500});
   for (const station of stations) {
     bar.tick();
 
