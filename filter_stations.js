@@ -1,5 +1,5 @@
 var LATEST_YEAR = 2021; // year in Common Era
-var MIN_DURATION = 10;  // years
+var MIN_DURATION = 3;   // years
 
 var fs = require('fs');
 var inv = JSON.parse(fs.readFileSync('ghcnd-inventory.json', 'utf8'));
