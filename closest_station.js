@@ -20,12 +20,19 @@ function quantile(qs, data) {
   return idxs.map(i => sorted[i]);
 }
 
-async function stationToPercentile(station, parentPath = '.') {
+async function parse(input) {
   var dsv = await dsvPromise;
+  var rows = dsv.csvParse(input);
+  return rows;
+}
+
+function getRowsFromFile(station, parentPath = '.') {
   var name = station.name;
   var fname = `${parentPath}/${name}.csv`;
-  var rows = dsv.csvParse(fs.readFileSync(fname, 'utf8'));
+  return parse(fs.readFileSync(fname, 'utf8'));
+}
 
+function stationToPercentile(rows) {
   var oldestDate = dayjs().subtract(YEARS_AGO, 'year');
   var oldest = oldestDate.format('YYYY-MM-DD');
 
@@ -41,14 +48,21 @@ async function stationToPercentile(station, parentPath = '.') {
   var lows = quantile(ps, tmin).map(o => o / 10);
   var his = quantile(ps, tmax).map(o => o / 10);
 
-  var summary = ps.map((p, i) => ({name, percentile: `${p * 100}%`, low: lows[i], high: his[i]}));
+  return {ps, lows, his, goods, goodPcts, totalCount: newEnough.length};
+}
+
+async function describeSummary(station, obj) {
+  var dsv = await dsvPromise;
+
+  var summary =
+      obj.ps.map((p, i) => ({name: station.name, percentile: `${p * 100}%`, low: obj.lows[i], high: obj.his[i]}));
   var csv = dsv.csvFormat(summary);
 
   var summaryKeys = Object.keys(summary[0]).filter(x => x !== 'name');
   var md = `| ${summaryKeys.join(' | ')} |
 | ${summaryKeys.map(_ => '---').join(' | ')} |
 ${summary.map(o => '| ' + summaryKeys.map(k => o[k]).join(' | ') + ' |').join('\n')}`;
-  return {ps, lows, his, csv, md, goods, goodPcts, totalCount: newEnough.length};
+  return {md, csv};
 }
 
 if (require.main === module) {
@@ -70,10 +84,12 @@ if (require.main === module) {
     var names = 'USC00048829 USW00023234 USC00043714'.split(' ');
     var handful = names.map(s => stations.find(o => o.name === s));
     for (const s of handful) {
-      const processed = await stationToPercentile(s, parentPath);
+      const rows = await getRowsFromFile(s, parentPath);
+      const processed = stationToPercentile(rows);
+      const readable = await describeSummary(s, processed);
       console.log(`## ${s.desc} (${
           processed.goodPcts.map(x => `${Math.round(x * 1000) / 10}%`).join('/')} data in last ${YEARS_AGO} years)
-${processed.md}
+${readable.md}
 
 `);
     }
@@ -87,10 +103,10 @@ ${processed.md}
       stationsToSummarize = JSON.parse(fs.readFileSync('good-stations-summary.json', 'utf8'));
     }
     for (const s of stationsToSummarize) {
-      if (!('summary' in s)) { s.summary = await stationToPercentile(s, parentPath); }
+      if (!('summary' in s)) { s.summary = stationToPercentile(await getRowsFromFile(s, parentPath)); }
       bar.tick();
     }
-    fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize));
+    fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize, null, 1));
     console.log(`\n${stations.length} stations processed`)
   })()
 }
