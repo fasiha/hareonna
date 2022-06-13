@@ -31,33 +31,35 @@ stats.sort(key=lambda v: v[2])  # sort by temp L2 distance
 sarr = np.array(stats)
 
 
-def stationToMd(station):
+def stationToMd(station, prefix=""):
   newline = '\n'
   s = station['summary']
   l = []
   for p, lo, hi in zip(s['ps'], s['lows'], s['his']):
     l.append(f'| {p*100}% | {lo} | {hi} |')
-  ret = f"""| percentile | low (°C) | high (°C) |
+  table = f"""| percentile | low (°C) | high (°C) |
 |---|---|---|
 {newline.join(l)}"""
-  return ret
 
-
-with open('closest.md', 'w') as fid:
-  for rank, [lo, hi, tempd, d, i, *rest] in enumerate(stats[:250]):
-    s = stations[i]
-    url = f'http://www.openstreetmap.org/?mlat={s["lat"]}&mlon={s["lon"]}&zoom=7'
-    out = f'''## № {rank+1}: {lo} °C, {hi} °C: [{s["desc"]}]({url})
-{d:,.1f} km away ({s["name"]})
+  lo = s['lows'][loidx]
+  hi = s['his'][hiidx]
+  url = f'http://www.openstreetmap.org/?mlat={station["lat"]}&mlon={station["lon"]}&zoom=7'
+  out = f'''## {prefix}{lo} °C, {hi} °C: [{station["desc"]}]({url})
+({station["name"]})
 <details>
-<summary>Percentile data ({max(s["summary"]["goodPcts"])*100:0.1f}% available)</summary>
+<summary>Percentile data ({max(s["goodPcts"])*100:0.1f}% available)</summary>
 
-{stationToMd(s)}
+{table}
 
 </details>
 
 '''
-    fid.write(out)
+  return out
+
+
+with open('closest.md', 'w') as fid:
+  for rank, [lo, hi, tempd, d, i, *rest] in enumerate(stats[:250]):
+    fid.write(stationToMd(stations[i], f'№ {rank+1}, {d:,.1f} km away: '))
 
 plt.figure()
 plt.scatter(sarr[0, 0], sarr[0, 1], c='r', s=400, label='closest to SSF Bart')
