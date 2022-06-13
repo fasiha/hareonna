@@ -8,9 +8,6 @@ plt.ion()
 with open('good-stations-summary.json', 'r') as fid:
   stations = json.load(fid)
 
-wat = max([s for s in stations if max(s['summary']['goodPcts']) > 1],
-          key=lambda s: max(s['summary']['goodPcts']))
-
 origin = [37.6642278, -122.4439774]
 ps, loidx, hiidx = [0.05, 0.95], 2, 6
 ps, loidx, hiidx = [0.1, 0.9], 3, 5
@@ -33,6 +30,19 @@ for i, [station, dist] in enumerate(zip(stations, distances)):
 stats.sort(key=lambda v: v[2])  # sort by temp L2 distance
 sarr = np.array(stats)
 
+
+def stationToMd(station):
+  newline = '\n'
+  s = station['summary']
+  l = []
+  for p, lo, hi in zip(s['ps'], s['lows'], s['his']):
+    l.append(f'| {p*100}% | {lo} | {hi} |')
+  ret = f"""| percentile | low (°C) | high (°C) |
+|---|---|---|
+{newline.join(l)}"""
+  return ret
+
+
 with open('closest.md', 'w') as fid:
   for rank, [lo, hi, tempd, d, i, *rest] in enumerate(stats[:250]):
     s = stations[i]
@@ -40,9 +50,9 @@ with open('closest.md', 'w') as fid:
     out = f'''## № {rank+1}: {lo} °C, {hi} °C: [{s["desc"]}]({url})
 {d:,.1f} km away ({s["name"]})
 <details>
-<summary>Percentile data ({max(s["summary"]["badPcts"])*100:0.1f}% missing)</summary>
+<summary>Percentile data ({max(s["summary"]["goodPcts"])*100:0.1f}% available)</summary>
 
-{s['summary']['md']}
+{stationToMd(s)}
 
 </details>
 
