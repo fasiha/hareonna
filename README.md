@@ -1,34 +1,23 @@
 ## Steps
-Install Node and Git. Run
+Install [Node](https://nodejs.org) and [Git](https://git-scm.com). Run
 ```
 git clone https://github.com/fasiha/hareonna.git
 cd hareonna
 npm i
 ```
 
-Download
+Download into this `hareonna` directory the following files:
 - https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt (10 MB)
 - https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-inventory.txt (33 MB)
+- https://www.ncei.noaa.gov/data/global-historical-climatology-network-daily/archive/daily-summaries-latest.tar.gz (7.1 GB as if 2022 June)
 
 Run:
 ```
 node jsonify_stations.js
 node filter_stations.js
-```
-This will generate a couple of JSON files and a text file.
-
-Now, if you have `xargs` and `shuf` and `wget`, run:
-```
-cat good-stations-urls.txt | shuf | xargs -n10 -P4 wget --continue
-```
-(If you don't have all these fancy command line utilities, use `wget --continue -i good-stations-urls.txt`.)
-
-It's going to download ~40 GB.
-
-Process the CSVs themselves to extract percentiles:
-```
 node closest_station.js
 ```
+This outputs a small <10 MB file, `good-stations-summary.json`, with a number of percentiles for temperature highs/lows for all "good" weather stations that have had temperature data for the last three years (though some stations may have (considerable) missing temperature data within the three year period).
 
 Finally, you need a bunch of Python to render some maps (coming soon to JavaScript/browser):
 ```bash
