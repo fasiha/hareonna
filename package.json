@@ -12,6 +12,7 @@
   "dependencies": {
     "d3-dsv": "^3.0.1",
     "dayjs": "^1.11.3",
-    "progress": "^2.0.3"
+    "progress": "^2.0.3",
+    "tar": "^6.1.11"
   }
 }

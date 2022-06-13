@@ -8,6 +8,9 @@ plt.ion()
 with open('good-stations-summary.json', 'r') as fid:
   stations = json.load(fid)
 
+wat = max([s for s in stations if max(s['summary']['goodPcts']) > 1],
+          key=lambda s: max(s['summary']['goodPcts']))
+
 origin = [37.6642278, -122.4439774]
 ps, loidx, hiidx = [0.05, 0.95], 2, 6
 ps, loidx, hiidx = [0.1, 0.9], 3, 5
