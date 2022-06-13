@@ -1,3 +1,4 @@
+var {env} = require('process');
 var tar = require('tar');
 var dsvPromise = import('d3-dsv');
 var ProgressBar = require('progress');
@@ -44,13 +45,12 @@ function stationToPercentile(rows, yearsAgo = YEARS_AGO) {
 
   var goods = [tmin, tmax].map(v => v.filter(x => x !== undefined).length);
   var daysElapsed = dayjs().diff(oldestDate, 'days');
-  var goodPcts = goods.map(x => x / daysElapsed);
 
-  var ps = [0, 0.025, 0.05, 0.1, 0.5, 0.9, 0.95, 0.975, 1];
+  var ps = [0, 0.025, 0.05, 0.1, .25, 0.5, .75, 0.9, 0.95, 0.975, 1];
   var lows = quantile(ps, tmin).map(o => o / 10);
   var his = quantile(ps, tmax).map(o => o / 10);
 
-  return {ps, lows, his, goods, goodPcts, totalCount: newEnough.length};
+  return {ps, lows, his, goods, days: daysElapsed};
 }
 
 async function describeSummary(station, obj) {
@@ -73,19 +73,6 @@ if (require.main === module) {
   const origin = [37.56396, -122.32289]; // Noodleosophy
   console.log(closest(origin, 5));
 
-  var {env} = require('process');
-
-  if (fs.existsSync('good-stations-summary.json')) {
-    const goodToIdx = new Map(goodStations.map((s, i) => [s.name, i]));
-    const cached = JSON.parse(fs.readFileSync('good-stations-summary.json', 'utf8'));
-    for (const cache of cached) {
-      if (goodToIdx.has(cache.name)) {
-        const idx = goodToIdx.get(cache.name);
-        goodStations[idx].summary = cache.summary;
-      }
-    }
-  }
-
   const csvToIndex = new Map(goodStations.flatMap((s, i) => s.summary ? [] : [[s.name + '.csv', i]]));
   var bar = new ProgressBar('  Processing [:bar] :rate fps :percent :etas',
                             {complete: '=', incomplete: ' ', width: 20, total: csvToIndex.size, renderThrottle: 2000});
@@ -107,7 +94,6 @@ if (require.main === module) {
             e.on('data', c => data.push(c))
             e.on('end', () => {
               const raw = Buffer.concat(data).toString('ascii');
-              data = []; // reclaim some memory?
               const parsed = parse(raw);
               const idx = csvToIndex.get(e.path);
               goodStations[idx].summary = stationToPercentile(parsed);
@@ -116,7 +102,10 @@ if (require.main === module) {
           }
         }
       });
-      fs.writeFileSync('good-stations-summary.json', JSON.stringify(goodStations, null, 1));
+      fs.writeFileSync(
+          'good-stations-summary.json',
+          JSON.stringify({percentiles: goodStations[0].ps, stations: goodStations.map(o => ({...o, ps: undefined}))},
+                         null, 1));
     }
   })();
 }

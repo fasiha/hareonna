@@ -6,11 +6,13 @@ from geo import distance
 plt.style.use('ggplot')
 plt.ion()
 with open('good-stations-summary.json', 'r') as fid:
-  stations = json.load(fid)
+  raw = json.load(fid)
+  stations = raw['stations']
+  percentiles = raw['percentiles']
+  raw = ''
 
 origin = [37.6642278, -122.4439774]
-ps, loidx, hiidx = [0.05, 0.95], 2, 6
-ps, loidx, hiidx = [0.1, 0.9], 3, 5
+ps, loidx, hiidx = [0.1, 0.9], 3, 7
 
 distances = distance(origin[0], origin[1], [s['lat'] for s in stations],
                      [s['lon'] for s in stations])
@@ -21,8 +23,8 @@ closestTemp = np.array(
 stats = []
 for i, [station, dist] in enumerate(zip(stations, distances)):
   s = station['summary']
-  assert ps[0] == s['ps'][loidx]
-  assert ps[1] == s['ps'][hiidx]
+  assert ps[0] == percentiles[loidx]
+  assert ps[1] == percentiles[hiidx]
   tempDist = np.sum((closestTemp - [s['lows'][loidx], s['his'][hiidx]])**2)
   stats.append(
       [s['lows'][loidx], s['his'][hiidx], tempDist, dist, i, station['lat'], station['lon']])
@@ -35,7 +37,7 @@ def stationToMd(station, prefix=""):
   newline = '\n'
   s = station['summary']
   l = []
-  for p, lo, hi in zip(s['ps'], s['lows'], s['his']):
+  for p, lo, hi in zip(percentiles, s['lows'], s['his']):
     l.append(f'| {p*100}% | {lo} | {hi} |')
   table = f"""| percentile | low (°C) | high (°C) |
 |---|---|---|
@@ -47,7 +49,7 @@ def stationToMd(station, prefix=""):
   out = f'''## {prefix}{lo} °C, {hi} °C: [{station["desc"]}]({url})
 ({station["name"]})
 <details>
-<summary>Percentile data ({max(s["goodPcts"])*100:0.1f}% available)</summary>
+<summary>Percentile data ({min(s["goods"])/s["days"]*100:0.1f}% available)</summary>
 
 {table}
 
