@@ -25,6 +25,7 @@ function extractBuffersFromTarball(tarpath, filenames, verbose = true) {
       if (n % 10e3 === 0) { console.log(`iter ${n}, ${Object.keys(data).length} files found`) }
       if (filenames.has(entry.path)) {
         entry.on('data', c => { data[entry.path] = (data[entry.path] || []).concat(c); });
+        entry.on('end', () => { data[entry.path] = buffersToString(data[entry.path]); })
       }
     };
   } else {
@@ -34,7 +35,6 @@ function extractBuffersFromTarball(tarpath, filenames, verbose = true) {
   }
   tar.t({onentry, file: tarpath, sync: true});
   if (verbose) { console.log(`iter ${n}, ${Object.keys(data).length} files found`); }
-  for (const key of Object.keys(data)) { data[key] = buffersToString(data[key]); }
   return data;
 }
 

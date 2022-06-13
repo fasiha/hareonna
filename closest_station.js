@@ -7,6 +7,7 @@ var {extractBuffersFromTarball} = require('./ttttar');
 var goodStations = JSON.parse(fs.readFileSync('good-stations.json', 'utf8'));
 
 var YEARS_AGO = 3;
+var LOW_MEMORY = true;
 
 function distsq(a, b) { return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2; }
 function closest(origin, limit = 50, stationsList = undefined) {
@@ -88,13 +89,17 @@ if (require.main === module) {
         new ProgressBar('  Processing [:bar] :rate fps :percent :etas',
                         {complete: '=', incomplete: ' ', width: 20, total: goodStations.length, renderThrottle: 2000});
 
+    let n = 0;
     for (const s of stationsToSummarize) {
+      if ((++n) % 1000 === 0) { fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize)); }
+
       const key = s.name + '.csv';
       if (!(key in stationsRaw)) {
         console.log('not found ' + s.name);
         continue;
       }
       s.summary = stationToPercentile(await parse(stationsRaw[key]));
+      if (LOW_MEMORY) { delete stationsRaw[key]; }
       bar.tick();
     }
     fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize, null, 1));
