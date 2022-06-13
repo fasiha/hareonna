@@ -1,13 +1,12 @@
+var tar = require('tar');
 var dsvPromise = import('d3-dsv');
 var ProgressBar = require('progress');
 var dayjs = require('dayjs');
 var fs = require('fs');
-var {extractBuffersFromTarball} = require('./ttttar');
 
 var goodStations = JSON.parse(fs.readFileSync('good-stations.json', 'utf8'));
 
 var YEARS_AGO = 3;
-var LOW_MEMORY = true;
 
 function distsq(a, b) { return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2; }
 function closest(origin, limit = 50, stationsList = undefined) {
@@ -76,33 +75,48 @@ if (require.main === module) {
 
   var {env} = require('process');
 
-  let stationsToSummarize = goodStations;
   if (fs.existsSync('good-stations-summary.json')) {
-    stationsToSummarize = JSON.parse(fs.readFileSync('good-stations-summary.json', 'utf8')).filter(o => !o.summary);
+    const goodToIdx = new Map(goodStations.map((s, i) => [s.name, i]));
+    const cached = JSON.parse(fs.readFileSync('good-stations-summary.json', 'utf8'));
+    for (const cache of cached) {
+      if (goodToIdx.has(cache.name)) {
+        const idx = goodToIdx.get(cache.name);
+        goodStations[idx].summary = cache.summary;
+      }
+    }
   }
 
-  const stationsRaw = extractBuffersFromTarball(env.HOME + '/Downloads/daily-summaries-latest.tar.gz',
-                                                stationsToSummarize.map(s => s.name + '.csv'));
+  const csvToIndex = new Map(goodStations.flatMap((s, i) => s.summary ? [] : [[s.name + '.csv', i]]));
+  var bar = new ProgressBar('  Processing [:bar] :rate fps :percent :etas',
+                            {complete: '=', incomplete: ' ', width: 20, total: csvToIndex.size, renderThrottle: 2000});
+  console.log(`to process: ${csvToIndex.size} stations`);
 
   (async function main() {
-    var bar =
-        new ProgressBar('  Processing [:bar] :rate fps :percent :etas',
-                        {complete: '=', incomplete: ' ', width: 20, total: goodStations.length, renderThrottle: 2000});
-
-    let n = 0;
-    for (const s of stationsToSummarize) {
-      if ((++n) % 1000 === 0) { fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize)); }
-
-      const key = s.name + '.csv';
-      if (!(key in stationsRaw)) {
-        console.log('not found ' + s.name);
-        continue;
-      }
-      s.summary = stationToPercentile(await parse(stationsRaw[key]));
-      if (LOW_MEMORY) { delete stationsRaw[key]; }
-      bar.tick();
+    var dsv = await dsvPromise;
+    function parse(input) {
+      var rows = dsv.csvParse(input);
+      return rows;
     }
-    fs.writeFileSync('good-stations-summary.json', JSON.stringify(stationsToSummarize, null, 1));
-    console.log(`\n${goodStations.length} stations processed`)
-  })()
+    if (csvToIndex.size > 0) {
+      tar.t({
+        sync: true,
+        file: env.HOME + '/Downloads/daily-summaries-latest.tar.gz',
+        onentry: e => {
+          if (csvToIndex.has(e.path)) {
+            let data = [];
+            e.on('data', c => data.push(c))
+            e.on('end', () => {
+              const raw = Buffer.concat(data).toString('ascii');
+              data = []; // reclaim some memory?
+              const parsed = parse(raw);
+              const idx = csvToIndex.get(e.path);
+              goodStations[idx].summary = stationToPercentile(parsed);
+              bar.tick();
+            });
+          }
+        }
+      });
+      fs.writeFileSync('good-stations-summary.json', JSON.stringify(goodStations, null, 1));
+    }
+  })();
 }
