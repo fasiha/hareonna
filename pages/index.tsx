@@ -1,3 +1,4 @@
+import Head from "next/head";
 import {
   GetStaticProps,
   InferGetStaticPropsType,
@@ -191,6 +192,15 @@ export default function HomePage({
   );
   return (
     <>
+      <Head>
+        <title>Hareonna</title>
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <meta
+          property="og:title"
+          content="Hareonna—look at the percentiles of thousands of weather stations’ lows and highs"
+          key="title"
+        />
+      </Head>
       <h1>Hareonna</h1>
       <div>
         <SearchOSM latLonSelector={(lat, lon) => setLatLon([lat, lon])} />
