@@ -139,22 +139,59 @@ function percentileToDescription(p: number): string {
   )} months a year); OR ≥ this ${pToDay(q)} days (${pToMon(q)} mos.)`;
 }
 
+interface DescribeStationProps {
+  station: StationWithSummary;
+  ps: number[];
+}
+function DescribeStation({ station, ps }: DescribeStationProps) {
+  return (
+    <div>
+      {station.name}: {station.desc} (
+      {(
+        (Math.min(...station.summary.goods) / station.summary.days) *
+        100
+      ).toFixed(1)}
+      %+ good data over {station.summary.days} days)
+      <table>
+        <thead>
+          <tr>
+            <th>p</th>
+            <th>low</th>
+            <th>high</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ps.map((p, i) => (
+            <tr>
+              <td>{p * 100}%</td>
+              <td>{station.summary.lows[i]}</td>
+              <td>{station.summary.his[i]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function HomePage({
-  stationSummaries: stationsPayload,
+  stationsPayload,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const [latLon, setLatLon] = useState<undefined | [number, number]>(undefined);
   const closest = latLon
     ? closestStation(latLon[0], latLon[1], stationsPayload.stations)
     : undefined;
-  const describeClosest = closest
-    ? `${closest.name}: ${closest.desc}`
-    : "(pick a location)";
+  const describeClosest = closest ? (
+    <DescribeStation station={closest} ps={stationsPayload.percentiles} />
+  ) : (
+    <p>(pick a location)</p>
+  );
   return (
     <>
       <h1>Hareonna</h1>
       <div>
         <SearchOSM latLonSelector={(lat, lon) => setLatLon([lat, lon])} />
-        <p>{describeClosest}</p>
+        {describeClosest}
         <ul>
           {stationsPayload.percentiles.map((p) => (
             <li key={p}>{percentileToDescription(p)}</li>
@@ -172,11 +209,11 @@ export const getStaticProps = async () => {
     const filenames = await readdir(postsDirectory);
     console.log("ls", filenames);
   }
-  const stationSummaries: StationsWithSummaryPayload = JSON.parse(
+  const stationsPayload: StationsWithSummaryPayload = JSON.parse(
     await readFile(
       path.join(process.cwd(), "good-stations-summary.json"),
       "utf8"
     )
   );
-  return { props: { stationSummaries } };
+  return { props: { stationsPayload } };
 };
