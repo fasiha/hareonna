@@ -150,12 +150,18 @@ interface DescribeStationProps {
 function DescribeStation({ station, ps }: DescribeStationProps) {
   return (
     <div>
-      {station.name}: {station.desc} (
-      {(
-        (Math.min(...station.summary.goods) / station.summary.days) *
-        100
-      ).toFixed(1)}
-      %+ good data over {station.summary.days} days)
+      <h2>
+        {station.name}: {station.desc}
+      </h2>
+      <p>
+        (
+        {(
+          (Math.min(...station.summary.goods) / station.summary.days) *
+          100
+        ).toFixed(1)}
+        %+ good data over {station.summary.days} days)
+      </p>
+
       <table>
         <thead>
           <tr>
