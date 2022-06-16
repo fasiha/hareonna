@@ -75,8 +75,8 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
       <ul>
         {results.map((r, i) => (
           <li key={i}>
+            <button onClick={() => latLonSelector(+r.lat, +r.lon)}>Pick</button>{" "}
             {r.display_name}: {r.lat}°, {r.lon}°{" "}
-            <button onClick={() => latLonSelector(+r.lat, +r.lon)}>Pick</button>
           </li>
         ))}
       </ul>
@@ -84,15 +84,10 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
 
   return (
     <div>
-      Search OpenStreetMap for:{" "}
-      <input
-        type="text"
-        placeholder="city, country, neighborhood, mountain…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />{" "}
-      <button
-        onClick={async () => {
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+
           setResults("fetching");
           const f = await fetch(
             `https://nominatim.openstreetmap.org/search?q=${search}&format=jsonv2`
@@ -106,8 +101,16 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
           }
         }}
       >
-        Search
-      </button>
+        <label>Search OpenStreetMap for: </label>
+        <input
+          type="text"
+          size={35}
+          placeholder="city, country, neighborhood, mountain…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />{" "}
+        <button type="submit">Search</button>
+      </form>
       <div>{body}</div>
     </div>
   );
