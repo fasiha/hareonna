@@ -5,7 +5,7 @@ import {
   GetStaticPaths,
   GetServerSideProps,
 } from "next";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { kdTree } from "kd-tree-javascript";
 import { pseudoToExact, pseudoHaversine } from "../haversine";
 
@@ -43,7 +43,7 @@ function stationToTree(stations: StationWithSummary[]) {
   );
 }
 
-function closestStation(
+function findClosestStation(
   lat: number,
   lon: number,
   tree: kdTree<StationWithSummary>
@@ -76,19 +76,15 @@ interface NominatimResult {
 }
 
 interface SearchOSMProps {
-  latLonSelector: (lat: number, lon: number) => void;
+  selectLocation: (lat: number, lon: number, desc: string) => void;
 }
 
-function SearchOSM({ latLonSelector }: SearchOSMProps) {
+function SearchOSM({ selectLocation: latLonSelector }: SearchOSMProps) {
   const [results, setResults] = useState<
     NominatimResult[] | "fetching" | "error"
   >([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    console.log("results", results);
-  }, [results]);
 
   const body =
     results === "fetching" ? (
@@ -99,7 +95,11 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
       <ul>
         {results.map((r, i) => (
           <li key={i}>
-            <button onClick={() => latLonSelector(+r.lat, +r.lon)}>Pick</button>{" "}
+            <button
+              onClick={() => latLonSelector(+r.lat, +r.lon, r.display_name)}
+            >
+              Pick
+            </button>{" "}
             {r.display_name}: {r.lat}°, {r.lon}°{" "}
           </li>
         ))}
@@ -167,46 +167,83 @@ function percentileToDescription(p: number, tot: number): string {
   return ret;
 }
 
+const circledNumbers =
+  "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿";
+
 interface DescribeStationProps {
-  station: StationWithSummary;
+  stations: ClosestStation[];
   ps: number[];
-  distance: number;
+  deleteStation: (name: string) => void;
 }
-function DescribeStation({ station, ps, distance }: DescribeStationProps) {
+function DescribeStation({
+  stations,
+  ps,
+  deleteStation,
+}: DescribeStationProps) {
+  if (stations.length === 0) {
+    return <div>(Waiting for you to pick some weather stations.)</div>;
+  }
+
+  const days = stations[0].closestStation.summary.days;
+  const stationDescriptions = stations.map(
+    (s) =>
+      `${s.closestStation.name}: ${
+        s.closestStation.desc
+      } (${s.pickedToStationDist.toFixed(1)} km away from ${
+        s.pickedDescription
+      }; ${((Math.min(...s.closestStation.summary.goods) / days) * 100).toFixed(
+        1
+      )}% good data over {days} days)`
+  );
   return (
     <div>
-      <h2>
-        {station.name}: {station.desc}
-      </h2>
-      <p>
-        ({distance.toFixed(1)} km away;{" "}
-        {(
-          (Math.min(...station.summary.goods) / station.summary.days) *
-          100
-        ).toFixed(1)}
-        %+ good data over {station.summary.days} days)
-      </p>
-
+      <ol>
+        {stations.map((s, i) => (
+          <li key={s.closestStation.name}>
+            {stationDescriptions[i]}
+            <button onClick={() => deleteStation(s.closestStation.name)}>
+              Delete
+            </button>
+          </li>
+        ))}
+      </ol>
       <table>
         <thead>
           <tr>
-            <th>
+            <th rowSpan={2}>
               %<sub>ile</sub>
             </th>
-            <th>Low</th>
-            <th>High</th>
-            <th></th>
+            {stations.map((s, i) => (
+              <th
+                key={s.closestStation.name}
+                colSpan={2}
+                title={stationDescriptions[i]}
+              >
+                {circledNumbers[i]}
+              </th>
+            ))}
+            <th rowSpan={2}>(notes)</th>
+          </tr>
+          <tr>
+            {stations.map((s, i) => (
+              <Fragment key={i}>
+                <th>Low</th>
+                <th>High</th>
+              </Fragment>
+            ))}
           </tr>
         </thead>
         <tbody>
           {ps.map((p, i) => (
             <tr key={p}>
-              <td>
-                {(p * 100).toFixed(1)}%<sub>ile</sub>
-              </td>
-              <td>{station.summary.lows[i]} °C</td>
-              <td>{station.summary.his[i]} °C</td>
-              <td>{percentileToDescription(p, station.summary.days)}</td>
+              <td>{(p * 100).toFixed(1)}%</td>
+              {stations.map((s) => (
+                <Fragment key={s.closestStation.name}>
+                  <td>{s.closestStation.summary.lows[i]} °C</td>
+                  <td>{s.closestStation.summary.his[i]} °C</td>
+                </Fragment>
+              ))}
+              <td>{percentileToDescription(p, days)}</td>
             </tr>
           ))}
         </tbody>
@@ -216,24 +253,20 @@ function DescribeStation({ station, ps, distance }: DescribeStationProps) {
 }
 
 /* Main app */
+interface ClosestStation {
+  pickedDescription: string;
+  pickedLat: number;
+  pickedLon: number;
+  closestStation: StationWithSummary;
+  pickedToStationDist: number;
+}
 export default function HomePage({
   stationsPayload,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const tree = useMemo(() => stationToTree(stationsPayload.stations), []);
 
-  const [latLon, setLatLon] = useState<undefined | [number, number]>(undefined);
-  const closest = latLon
-    ? closestStation(latLon[0], latLon[1], tree)
-    : undefined;
-  const describeClosest = closest ? (
-    <DescribeStation
-      station={closest[0]}
-      distance={closest[1]}
-      ps={stationsPayload.percentiles}
-    />
-  ) : (
-    <p>(pick a location)</p>
-  );
+  const [locations, setLocations] = useState<ClosestStation[]>([]);
+
   return (
     <>
       <Head>
@@ -247,8 +280,37 @@ export default function HomePage({
       </Head>
       <h1>Hareonna</h1>
       <div>
-        <SearchOSM latLonSelector={(lat, lon) => setLatLon([lat, lon])} />
-        {describeClosest}
+        <SearchOSM
+          selectLocation={(pickedLat, pickedLon, pickedDescription) =>
+            setLocations((curr) => {
+              const [closestStation, pickedToStationDist] = findClosestStation(
+                pickedLat,
+                pickedLon,
+                tree
+              );
+              return curr.concat({
+                pickedDescription,
+                pickedLon,
+                pickedLat,
+                closestStation,
+                pickedToStationDist,
+              });
+            })
+          }
+        />
+        {locations.length ? (
+          <DescribeStation
+            stations={locations}
+            ps={stationsPayload.percentiles}
+            deleteStation={(name) =>
+              setLocations((curr) =>
+                curr.filter((s) => s.closestStation.name !== name)
+              )
+            }
+          />
+        ) : (
+          <p>(pick a location)</p>
+        )}
         <p>
           <small>
             <a href="https://github.com/fasiha/hareonna/">Source</a> on GitHub
