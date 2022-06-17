@@ -231,6 +231,11 @@ export default function HomePage({
             <li key={p}>{percentileToDescription(p)}</li>
           ))}
         </ul>
+        <p>
+          <small>
+            <a href="https://github.com/fasiha/hareonna/">Source</a> on GitHub
+          </small>
+        </p>
       </div>
     </>
   );
