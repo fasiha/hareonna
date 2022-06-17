@@ -12,6 +12,7 @@ import { pseudoToExact, pseudoHaversine } from "../haversine";
 import { readFile, readdir } from "fs/promises";
 import path from "path";
 
+/* Interfaces for the station data */
 interface GhcndStation {
   name: string;
   lat: number;
@@ -33,6 +34,7 @@ interface StationsWithSummaryPayload {
   stations: StationWithSummary[];
 }
 
+/* Stations to distances */
 function stationToTree(stations: StationWithSummary[]) {
   return new kdTree(
     stations,
@@ -41,9 +43,19 @@ function stationToTree(stations: StationWithSummary[]) {
   );
 }
 
-/**
- * See https://nominatim.org/release-docs/develop/api/Output/
- */
+function closestStation(
+  lat: number,
+  lon: number,
+  tree: kdTree<StationWithSummary>
+): [StationWithSummary, number] {
+  const [[station, pseudoDistance]] = tree.nearest(
+    { lat, lon } as StationWithSummary,
+    1
+  );
+  return [station, pseudoToExact(pseudoDistance)];
+}
+
+/* OpenStreetMap: See https://nominatim.org/release-docs/develop/api/Output/ */
 interface NominatimResult {
   place_id: number;
   license: string;
@@ -128,18 +140,7 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
   );
 }
 
-function closestStation(
-  lat: number,
-  lon: number,
-  tree: kdTree<StationWithSummary>
-): [StationWithSummary, number] {
-  const [[station, pseudoDistance]] = tree.nearest(
-    { lat, lon } as StationWithSummary,
-    1
-  );
-  return [station, pseudoToExact(pseudoDistance)];
-}
-
+/* Describe an individual station */
 function percentileToDescription(p: number): string {
   const q = 1 - p;
   const pToDay = (p: number) => (p * 365.25).toFixed(1);
@@ -191,6 +192,7 @@ function DescribeStation({ station, ps, distance }: DescribeStationProps) {
   );
 }
 
+/* Main app */
 export default function HomePage({
   stationsPayload,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
@@ -234,6 +236,7 @@ export default function HomePage({
   );
 }
 
+/* Next.js infra: load raw data at compile-time and bundle it */
 export const getStaticProps = async () => {
   {
     // might only print if you restart next dev server
