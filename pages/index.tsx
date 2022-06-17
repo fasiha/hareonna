@@ -141,8 +141,8 @@ function SearchOSM({ selectLocation: latLonSelector }: SearchOSMProps) {
 }
 
 /* Describe an individual station */
-const pToDay = (p: number) => (p * 365.25).toFixed(1);
-const pToMon = (p: number) => (p * 12).toFixed(1);
+const pToDay = (p: number) => Math.round(p * 365.25);
+const pToMon = (p: number) => Math.round(p * 12);
 
 const PercentileDescriptionCache: Map<number, string> = new Map();
 function percentileToDescription(p: number, tot: number): string {
@@ -193,14 +193,14 @@ function DescribeStation({
         s.pickedDescription
       }; ${((Math.min(...s.closestStation.summary.goods) / days) * 100).toFixed(
         1
-      )}% good data over {days} days)`
+      )}% good data over ${days} days)`
   );
   return (
     <div>
       <ol>
         {stations.map((s, i) => (
           <li key={s.closestStation.name}>
-            {stationDescriptions[i]}
+            {stationDescriptions[i]}{" "}
             <button onClick={() => deleteStation(s.closestStation.name)}>
               Delete
             </button>
@@ -219,7 +219,10 @@ function DescribeStation({
                 colSpan={2}
                 title={stationDescriptions[i]}
               >
-                {circledNumbers[i]}
+                {circledNumbers[i]}{" "}
+                <button onClick={() => deleteStation(s.closestStation.name)}>
+                  x
+                </button>
               </th>
             ))}
             <th rowSpan={2}>(notes)</th>
