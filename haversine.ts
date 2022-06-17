@@ -2,7 +2,7 @@ const {PI, sin, cos} = Math;
 const radperdeg = PI / 180;
 export function pseudoHaversine(p1: [number, number], p2: [number, number]): number {
   // We need to do it this way because kd-tree-javascript will pass in _objects_ like
-  // p1 = {'0': _, '1': __}`.
+  // `p1 = {'0': _, '1': __}`.
   const rlat1 = p1[0] * radperdeg;
   const rlon1 = p1[1] * radperdeg;
   const rlat2 = p2[0] * radperdeg;

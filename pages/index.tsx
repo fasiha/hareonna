@@ -141,13 +141,30 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
 }
 
 /* Describe an individual station */
-function percentileToDescription(p: number): string {
-  const q = 1 - p;
-  const pToDay = (p: number) => (p * 365.25).toFixed(1);
-  const pToMon = (p: number) => (p * 12).toFixed(1);
-  return `${p * 100}%ile temperature: ≤ this ${pToDay(p)} days a year (${pToMon(
-    p
-  )} months a year); OR ≥ this ${pToDay(q)} days (${pToMon(q)} mos.)`;
+const pToDay = (p: number) => (p * 365.25).toFixed(1);
+const pToMon = (p: number) => (p * 12).toFixed(1);
+
+const PercentileDescriptionCache: Map<number, string> = new Map();
+function percentileToDescription(p: number, tot: number): string {
+  if (PercentileDescriptionCache.has(p)) {
+    return PercentileDescriptionCache.get(p) || "";
+  }
+  let ret = "";
+  if (p === 0) {
+    ret = `temp. min in ${tot} days`;
+  } else if (p === 1) {
+    ret = `temp. max in ${tot} days`;
+  } else if (p < 0.15) {
+    ret = `temp ≤ this ${pToDay(p)} days/year`;
+  } else if (p < 0.51) {
+    ret = `temp ≤ this ${pToMon(p)} months/year`;
+  } else if (1 - p < 0.15) {
+    ret = `temp ≥ this ${pToDay(1 - p)} days/year`;
+  } else {
+    ret = `temp ≥ this ${pToMon(1 - p)} months/year`;
+  }
+  PercentileDescriptionCache.set(p, ret);
+  return ret;
 }
 
 interface DescribeStationProps {
@@ -173,17 +190,23 @@ function DescribeStation({ station, ps, distance }: DescribeStationProps) {
       <table>
         <thead>
           <tr>
-            <th>p</th>
-            <th>low</th>
-            <th>high</th>
+            <th>
+              %<sub>ile</sub>
+            </th>
+            <th>Low</th>
+            <th>High</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {ps.map((p, i) => (
-            <tr>
-              <td>{p * 100}%</td>
-              <td>{station.summary.lows[i]}</td>
-              <td>{station.summary.his[i]}</td>
+            <tr key={p}>
+              <td>
+                {(p * 100).toFixed(1)}%<sub>ile</sub>
+              </td>
+              <td>{station.summary.lows[i]} °C</td>
+              <td>{station.summary.his[i]} °C</td>
+              <td>{percentileToDescription(p, station.summary.days)}</td>
             </tr>
           ))}
         </tbody>
@@ -226,11 +249,6 @@ export default function HomePage({
       <div>
         <SearchOSM latLonSelector={(lat, lon) => setLatLon([lat, lon])} />
         {describeClosest}
-        <ul>
-          {stationsPayload.percentiles.map((p) => (
-            <li key={p}>{percentileToDescription(p)}</li>
-          ))}
-        </ul>
         <p>
           <small>
             <a href="https://github.com/fasiha/hareonna/">Source</a> on GitHub
