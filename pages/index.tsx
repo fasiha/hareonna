@@ -5,7 +5,10 @@ import {
   GetStaticPaths,
   GetServerSideProps,
 } from "next";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { kdTree } from "kd-tree-javascript";
+import { pseudoToExact, pseudoHaversine } from "../haversine";
+
 import { readFile, readdir } from "fs/promises";
 import path from "path";
 
@@ -28,6 +31,14 @@ interface StationWithSummary extends GhcndStation {
 interface StationsWithSummaryPayload {
   percentiles: number[];
   stations: StationWithSummary[];
+}
+
+function stationToTree(stations: StationWithSummary[]) {
+  return new kdTree(
+    stations,
+    (a, b) => pseudoHaversine([+a.lat, +a.lon], [+b.lat, +b.lon]),
+    ["lat", "lon"]
+  );
 }
 
 /**
@@ -118,20 +129,15 @@ function SearchOSM({ latLonSelector }: SearchOSMProps) {
 }
 
 function closestStation(
-  lat0: number,
-  lon0: number,
-  stations: StationWithSummary[]
-): StationWithSummary | undefined {
-  let bestDist = Infinity;
-  let best: undefined | StationWithSummary = undefined;
-  for (const s of stations) {
-    const currDist = (lat0 - s.lat) ** 2 + (lon0 - s.lon) ** 2;
-    if (currDist < bestDist) {
-      bestDist = currDist;
-      best = s;
-    }
-  }
-  return best;
+  lat: number,
+  lon: number,
+  tree: kdTree<StationWithSummary>
+): [StationWithSummary, number] {
+  const [[station, pseudoDistance]] = tree.nearest(
+    { lat, lon } as StationWithSummary,
+    1
+  );
+  return [station, pseudoToExact(pseudoDistance)];
 }
 
 function percentileToDescription(p: number): string {
@@ -146,15 +152,16 @@ function percentileToDescription(p: number): string {
 interface DescribeStationProps {
   station: StationWithSummary;
   ps: number[];
+  distance: number;
 }
-function DescribeStation({ station, ps }: DescribeStationProps) {
+function DescribeStation({ station, ps, distance }: DescribeStationProps) {
   return (
     <div>
       <h2>
         {station.name}: {station.desc}
       </h2>
       <p>
-        (
+        ({distance.toFixed(1)} km away;{" "}
         {(
           (Math.min(...station.summary.goods) / station.summary.days) *
           100
@@ -187,12 +194,18 @@ function DescribeStation({ station, ps }: DescribeStationProps) {
 export default function HomePage({
   stationsPayload,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
+  const tree = useMemo(() => stationToTree(stationsPayload.stations), []);
+
   const [latLon, setLatLon] = useState<undefined | [number, number]>(undefined);
   const closest = latLon
-    ? closestStation(latLon[0], latLon[1], stationsPayload.stations)
+    ? closestStation(latLon[0], latLon[1], tree)
     : undefined;
   const describeClosest = closest ? (
-    <DescribeStation station={closest} ps={stationsPayload.percentiles} />
+    <DescribeStation
+      station={closest[0]}
+      distance={closest[1]}
+      ps={stationsPayload.percentiles}
+    />
   ) : (
     <p>(pick a location)</p>
   );
