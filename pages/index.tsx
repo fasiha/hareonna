@@ -5,8 +5,9 @@ import {
   GetStaticPaths,
   GetServerSideProps,
 } from "next";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { kdTree } from "kd-tree-javascript";
+import * as Plot from "@observablehq/plot";
 import { pseudoToExact, pseudoHaversine } from "../haversine";
 
 import { readFile, readdir } from "fs/promises";
@@ -195,8 +196,59 @@ function DescribeStation({
         1
       )}% good data over ${days} days)`
   );
+
+  const plotRef = useRef(null);
+  useEffect(() => {
+    const data = stations.flatMap((s) =>
+      s.closestStation.summary.his.map((hi, i) => ({
+        hi,
+        lo: s.closestStation.summary.lows[i],
+        p: ps[i],
+        name: s.closestStation.name,
+      }))
+    );
+    const chart = Plot.plot({
+      y: {
+        grid: true,
+      },
+      color: {
+        legend: true,
+      },
+      marks: [
+        Plot.areaY(data, {
+          x: "p",
+          y: "lo",
+          y2: "hi",
+          z: "name",
+          fillOpacity: 0.1,
+          fill: "name",
+        }),
+        Plot.lineY(data, {
+          x: "p",
+          y: "lo",
+          z: "name",
+          marker: "circle",
+          stroke: "name",
+          strokeWidth: 1,
+        }),
+        Plot.lineY(data, {
+          x: "p",
+          y: "hi",
+          z: "name",
+          marker: "circle",
+          stroke: "name",
+          strokeWidth: 1,
+        }),
+        //Plot.lineY(bls, {x: "date", y: "unemployed", z: "industry", strokeWidth: 1})
+      ],
+    });
+    (plotRef.current as any).append(chart);
+    return () => chart.remove();
+  }, [stations]);
+
   return (
     <div>
+      <div id="plot" ref={plotRef} />
       <ol>
         {stations.map((s, i) => (
           <li key={s.closestStation.name}>
