@@ -351,6 +351,12 @@ export default function HomePage({
                 pickedLon,
                 tree
               );
+              if (
+                curr.find((s) => s.closestStation.name === closestStation.name)
+              ) {
+                // Don't add duplicates
+                return curr;
+              }
               return curr.concat({
                 pickedDescription,
                 pickedLon,
