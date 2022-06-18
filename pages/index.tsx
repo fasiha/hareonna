@@ -199,12 +199,14 @@ function DescribeStation({
 
   const plotRef = useRef(null);
   useEffect(() => {
-    const data = stations.flatMap((s) =>
+    const data = stations.flatMap((s, sidx) =>
       s.closestStation.summary.his.map((hi, i) => ({
         hi,
         lo: s.closestStation.summary.lows[i],
         p: ps[i] * 100,
-        station: s.closestStation.desc.replaceAll(/\s+/g, " "),
+        station: `${
+          circledNumbers[sidx] || sidx
+        } ${s.closestStation.desc.replaceAll(/\s+/g, " ")}`,
       }))
     );
     const chart = Plot.plot({
@@ -214,9 +216,6 @@ function DescribeStation({
         label: "↑ °C",
       },
       x: { label: "percentile →" },
-      color: {
-        legend: true,
-      },
       facet: { data, x: "station" },
       marks: [
         Plot.ruleY([10, 20, 30]),
