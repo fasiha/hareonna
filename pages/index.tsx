@@ -13,6 +13,9 @@ import { pseudoToExact, pseudoHaversine } from "../haversine";
 import { readFile, readdir } from "fs/promises";
 import path from "path";
 
+import "leaflet/dist/leaflet.css";
+import { MapStationsDynamic } from "../components/MapStationsDynamic";
+
 /* Interfaces for the station data */
 interface GhcndStation {
   name: string;
@@ -367,6 +370,7 @@ export default function HomePage({
             })
           }
         />
+        <MapStationsDynamic />
         <DescribeStation
           stations={locations}
           ps={stationsPayload.percentiles}
