@@ -197,6 +197,7 @@ function DescribeStation({
       )}% good data over ${days} days)`
   );
 
+  const [width, setWidth] = useState(640);
   const plotRef = useRef(null);
   useEffect(() => {
     const data = stations.flatMap((s, sidx) =>
@@ -210,7 +211,7 @@ function DescribeStation({
       }))
     );
     const chart = Plot.plot({
-      width: 1200,
+      width: width,
       y: {
         grid: true,
         label: "↑ °C",
@@ -242,17 +243,20 @@ function DescribeStation({
         }),
       ],
     });
-
     (plotRef.current as any).append(chart);
 
     return () => {
       chart.remove();
     };
-  }, [stations]);
+  }, [stations, width]);
 
   return (
     <div>
-      <div ref={plotRef} />
+      <div style={{ width: "100%" }} ref={plotRef} />
+      <p>
+        (Tweak width: <button onClick={() => setWidth(width + 100)}>+</button>{" "}
+        <button onClick={() => setWidth(width - 100)}>-</button>)
+      </p>
       <ol>
         {stations.map((s, i) => (
           <li key={s.closestStation.name}>
