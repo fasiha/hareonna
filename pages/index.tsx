@@ -219,7 +219,7 @@ function DescribeStation({
                 colSpan={2}
                 title={stationDescriptions[i]}
               >
-                {circledNumbers[i]}{" "}
+                {circledNumbers[i] || i}{" "}
                 <button onClick={() => deleteStation(s.closestStation.name)}>
                   x
                 </button>
@@ -301,19 +301,15 @@ export default function HomePage({
             })
           }
         />
-        {locations.length ? (
-          <DescribeStation
-            stations={locations}
-            ps={stationsPayload.percentiles}
-            deleteStation={(name) =>
-              setLocations((curr) =>
-                curr.filter((s) => s.closestStation.name !== name)
-              )
-            }
-          />
-        ) : (
-          <p>(pick a location)</p>
-        )}
+        <DescribeStation
+          stations={locations}
+          ps={stationsPayload.percentiles}
+          deleteStation={(name) =>
+            setLocations((curr) =>
+              curr.filter((s) => s.closestStation.name !== name)
+            )
+          }
+        />
         <p>
           <small>
             <a href="https://github.com/fasiha/hareonna/">Source</a> on GitHub
