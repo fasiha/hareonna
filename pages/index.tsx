@@ -203,52 +203,57 @@ function DescribeStation({
       s.closestStation.summary.his.map((hi, i) => ({
         hi,
         lo: s.closestStation.summary.lows[i],
-        p: ps[i],
-        name: s.closestStation.name,
+        p: ps[i] * 100,
+        station: s.closestStation.desc.replaceAll(/\s+/g, " "),
       }))
     );
     const chart = Plot.plot({
+      width: 1200,
       y: {
         grid: true,
+        label: "↑ °C",
       },
+      x: { label: "percentile →" },
       color: {
         legend: true,
       },
+      facet: { data, x: "station" },
       marks: [
+        Plot.ruleY([10, 20, 30]),
         Plot.areaY(data, {
           x: "p",
           y: "lo",
           y2: "hi",
-          z: "name",
-          fillOpacity: 0.1,
-          fill: "name",
+          fillOpacity: 0.5,
+          fill: "station",
         }),
         Plot.lineY(data, {
           x: "p",
           y: "lo",
-          z: "name",
           marker: "circle",
-          stroke: "name",
+          stroke: "station",
           strokeWidth: 1,
         }),
         Plot.lineY(data, {
           x: "p",
           y: "hi",
-          z: "name",
           marker: "circle",
-          stroke: "name",
+          stroke: "station",
           strokeWidth: 1,
         }),
-        //Plot.lineY(bls, {x: "date", y: "unemployed", z: "industry", strokeWidth: 1})
       ],
     });
+
     (plotRef.current as any).append(chart);
-    return () => chart.remove();
+
+    return () => {
+      chart.remove();
+    };
   }, [stations]);
 
   return (
     <div>
-      <div id="plot" ref={plotRef} />
+      <div ref={plotRef} />
       <ol>
         {stations.map((s, i) => (
           <li key={s.closestStation.name}>
