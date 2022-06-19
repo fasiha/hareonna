@@ -274,42 +274,43 @@ export default function App({
   return (
     <>
       <h1>Hareonna</h1>
-      <div>
-        <SearchOSM
-          selectLocation={(lat, lon) => {
-            const hits = tree.nearest({ lat, lon } as StationWithSummary, 5);
-            setCamera({
-              center: [lat, lon],
-              pointsToFit: hits.map(([{ lat, lon }]) => [+lat, +lon]),
-            });
-          }}
-        />
-        <MapStationsDynamic
-          setStation={(newStation: StationWithSummary) => {
-            setStations((curr) => {
-              if (curr.find((s) => s.name === newStation.name)) {
-                // Don't add duplicates
-                return curr;
-              }
-              return curr.concat(newStation);
-            });
-          }}
-          camera={camera}
-          stationsPayload={stationsPayload}
-        />
-        <DescribeStation
-          stations={stations}
-          ps={stationsPayload.percentiles}
-          deleteStation={(name) =>
-            setStations((curr) => curr.filter((s) => s.name !== name))
-          }
-        />
-        <p>
-          <small>
-            <a href="https://github.com/fasiha/hareonna/">Source</a> on GitHub
-          </small>
-        </p>
-      </div>
+      <h2>(Optional Input: Search for a place)</h2>
+      <SearchOSM
+        selectLocation={(lat, lon) => {
+          const hits = tree.nearest({ lat, lon } as StationWithSummary, 5);
+          setCamera({
+            center: [lat, lon],
+            pointsToFit: hits.map(([{ lat, lon }]) => [+lat, +lon]),
+          });
+        }}
+      />
+      <h2>Real Input: Click on a weather station and pick it</h2>
+      <MapStationsDynamic
+        setStation={(newStation: StationWithSummary) => {
+          setStations((curr) => {
+            if (curr.find((s) => s.name === newStation.name)) {
+              // Don't add duplicates
+              return curr;
+            }
+            return curr.concat(newStation);
+          });
+        }}
+        camera={camera}
+        stationsPayload={stationsPayload}
+      />
+      <h2>Output: Visualization of high/low temperature percentiles</h2>
+      <DescribeStation
+        stations={stations}
+        ps={stationsPayload.percentiles}
+        deleteStation={(name) =>
+          setStations((curr) => curr.filter((s) => s.name !== name))
+        }
+      />
+      <p>
+        <small>
+          <a href="https://github.com/fasiha/hareonna/">Source</a> on GitHub
+        </small>
+      </p>
     </>
   );
 }
