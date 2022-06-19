@@ -4,28 +4,12 @@ import * as Plot from "@observablehq/plot";
 import { pseudoToExact, pseudoHaversine } from "../haversine";
 
 import { MapStationsDynamic } from "../components/MapStationsDynamic";
-
-/* Interfaces for the station data */
-interface GhcndStation {
-  name: string;
-  lat: number;
-  lon: number;
-  elev: number;
-  desc: string;
-}
-interface StationSummary {
-  lows: number[];
-  his: number[];
-  goods: [number, number];
-  days: number;
-}
-interface StationWithSummary extends GhcndStation {
-  summary: StationSummary;
-}
-interface StationsWithSummaryPayload {
-  percentiles: number[];
-  stations: StationWithSummary[];
-}
+import {
+  StationWithSummary,
+  StationsWithSummaryPayload,
+  NominatimResult,
+  ClosestStation,
+} from "./interfaces";
 
 /* Stations to distances */
 function stationToTree(stations: StationWithSummary[]) {
@@ -48,26 +32,7 @@ function findClosestStation(
   return [station, pseudoToExact(pseudoDistance)];
 }
 
-/* OpenStreetMap: See https://nominatim.org/release-docs/develop/api/Output/ */
-interface NominatimResult {
-  place_id: number;
-  license: string;
-  osm_type: "node" | "way" | "relation" | undefined;
-  osm_id: number;
-  boundingbox: [string, string, string, string]; // min latitude, max latitude, min longitude, max longitude
-  lat: string;
-  lon: string;
-  display_name: string;
-  place_rank: number;
-  category: string;
-  type: string;
-  importance: number;
-  icon: string;
-  address?: Record<string, string>;
-  extratags?: Record<string, string>;
-  namedetails?: Record<string, string>;
-}
-
+/* OpenStreetMap lookup */
 interface SearchOSMProps {
   selectLocation: (lat: number, lon: number, desc: string) => void;
 }
@@ -308,13 +273,6 @@ function DescribeStation({
 }
 
 /* Main app */
-interface ClosestStation {
-  pickedDescription: string;
-  pickedLat: number;
-  pickedLon: number;
-  closestStation: StationWithSummary;
-  pickedToStationDist: number;
-}
 export default function App({
   stationsPayload,
 }: {
