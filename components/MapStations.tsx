@@ -13,11 +13,7 @@ interface MapStationsProps {
 function MapStations({ latlons }: MapStationsProps) {
   const position = [0, 0] as [number, number];
   return (
-    <MapContainer
-      center={position}
-      zoom={3}
-      style={{ width: "100%", height: "600px", color: "black" }}
-    >
+    <MapContainer center={position} zoom={3} className="mapContainer">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
