@@ -13,7 +13,6 @@ import { pseudoToExact, pseudoHaversine } from "../haversine";
 import { readFile, readdir } from "fs/promises";
 import path from "path";
 
-import "leaflet/dist/leaflet.css";
 import { MapStationsDynamic } from "../components/MapStationsDynamic";
 
 /* Interfaces for the station data */
@@ -370,7 +369,11 @@ export default function HomePage({
             })
           }
         />
-        <MapStationsDynamic />
+        <MapStationsDynamic
+          latlons={stationsPayload.stations.map(
+            (o) => [+o.lat, +o.lon] as [number, number]
+          )}
+        />
         <DescribeStation
           stations={locations}
           ps={stationsPayload.percentiles}
