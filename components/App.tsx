@@ -127,13 +127,13 @@ interface DescribeStationProps {
   stations: StationWithSummary[];
   ps: number[];
   deleteStation: (name: string) => void;
-  findSimilarTo: (station: StationWithSummary) => void;
+  setSimilarTo: (station: StationWithSummary) => void;
 }
 function DescribeStation({
   stations,
   ps,
   deleteStation,
-  findSimilarTo,
+  setSimilarTo,
 }: DescribeStationProps) {
   if (stations.length === 0) {
     return <div>(Waiting for you to pick some weather stations.)</div>;
@@ -214,7 +214,7 @@ function DescribeStation({
           <li key={s.name}>
             {stationDescriptions[i]}{" "}
             <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
-            <button onClick={() => findSimilarTo(s)}>Find Similar</button>
+            <button onClick={() => setSimilarTo(s)}>Find similar</button>
           </li>
         ))}
       </ol>
@@ -354,6 +354,7 @@ export default function App({
       />
       <h2>Or: Click on a weather station and pick it</h2>
       <MapStationsDynamic
+        setSimilarTo={(s) => setSimilarTo(s)}
         setStation={(newStation: StationWithSummary) => {
           setStationsOfInterest((curr) => {
             if (curr.find((s) => s.name === newStation.name)) {
@@ -374,9 +375,7 @@ export default function App({
         deleteStation={(name) =>
           setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))
         }
-        findSimilarTo={(s) => {
-          setSimilarTo(s);
-        }}
+        setSimilarTo={(s) => setSimilarTo(s)}
       />
       <p>
         <small>

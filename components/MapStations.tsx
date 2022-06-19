@@ -16,6 +16,7 @@ interface MapStationsProps {
   stationsPayload: StationsWithSummaryPayload;
   camera: { center: [number, number]; pointsToFit: [number, number][] };
   setStation: (station: StationWithSummary) => void;
+  setSimilarTo: (station: StationWithSummary) => void;
   similarStationsObj: {
     targetStation: StationWithSummary | undefined;
     similarStations: StationWithSummary[];
@@ -25,6 +26,7 @@ function MapStations({
   camera: { center, pointsToFit },
   stationsPayload: { stations },
   setStation,
+  setSimilarTo,
   similarStationsObj: { targetStation, similarStations },
 }: MapStationsProps) {
   const [map, setMap] = useState<Map | null>(null);
@@ -50,7 +52,8 @@ function MapStations({
                   100
                 ).toFixed(1)}
                 % available over {v.summary.days} days){" "}
-                <button onClick={() => setStation(v)}>Pick</button>
+                <button onClick={() => setStation(v)}>Pick</button>{" "}
+                <button onClick={() => setSimilarTo(v)}>Find similar</button>
               </Popup>
             </Marker>
           ))}
