@@ -33,7 +33,7 @@ function findClosestStation(
 
 /* OpenStreetMap lookup */
 interface SearchOSMProps {
-  selectLocation: (lat: number, lon: number, desc: string) => void;
+  selectLocation: (lat: number, lon: number) => void;
 }
 
 function SearchOSM({ selectLocation: latLonSelector }: SearchOSMProps) {
@@ -52,11 +52,7 @@ function SearchOSM({ selectLocation: latLonSelector }: SearchOSMProps) {
       <ul>
         {results.map((r, i) => (
           <li key={i}>
-            <button
-              onClick={() => latLonSelector(+r.lat, +r.lon, r.display_name)}
-            >
-              Pick
-            </button>{" "}
+            <button onClick={() => latLonSelector(+r.lat, +r.lon)}>Pick</button>{" "}
             {r.display_name}: {r.lat}°, {r.lon}°{" "}
           </li>
         ))}
@@ -270,28 +266,37 @@ export default function App({
   const tree = useMemo(() => stationToTree(stationsPayload.stations), []);
 
   const [stations, setStations] = useState<StationWithSummary[]>([]);
+  const [camera, setCamera] = useState({
+    center: [0, 0] as [number, number],
+    pointsToFit: [] as [number, number][],
+  });
 
   return (
     <>
       <h1>Hareonna</h1>
       <div>
         <SearchOSM
-          selectLocation={(pickedLat, pickedLon, pickedDescription) =>
+          selectLocation={(lat, lon) => {
+            const hits = tree.nearest({ lat, lon } as StationWithSummary, 5);
+            setCamera({
+              center: [lat, lon],
+              pointsToFit: hits.map(([{ lat, lon }]) => [+lat, +lon]),
+            });
+          }}
+        />
+        <MapStationsDynamic
+          setStation={(newStation: StationWithSummary) => {
             setStations((curr) => {
-              const [closestStation, pickedToStationDist] = findClosestStation(
-                pickedLat,
-                pickedLon,
-                tree
-              );
-              if (curr.find((s) => s.name === closestStation.name)) {
+              if (curr.find((s) => s.name === newStation.name)) {
                 // Don't add duplicates
                 return curr;
               }
-              return curr.concat(closestStation);
-            })
-          }
+              return curr.concat(newStation);
+            });
+          }}
+          camera={camera}
+          stationsPayload={stationsPayload}
         />
-        <MapStationsDynamic stationsPayload={stationsPayload} />
         <DescribeStation
           stations={stations}
           ps={stationsPayload.percentiles}

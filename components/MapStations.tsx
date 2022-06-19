@@ -6,32 +6,55 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import MarkerClusterGroup from "./MarkerClusterGroup";
-import { useMemo } from "react";
-import { StationsWithSummaryPayload } from "./interfaces";
+import { useEffect, useMemo, useState } from "react";
+import { StationsWithSummaryPayload, StationWithSummary } from "./interfaces";
 
 interface MapStationsProps {
   stationsPayload: StationsWithSummaryPayload;
+  camera: { center: [number, number]; pointsToFit: [number, number][] };
+  setStation: (station: StationWithSummary) => void;
 }
-function MapStations({ stationsPayload: { stations } }: MapStationsProps) {
-  const position = [0, 0] as [number, number];
-  const cluster = useMemo(
+function MapStations({
+  camera: { center, pointsToFit },
+  stationsPayload: { stations },
+  setStation,
+}: MapStationsProps) {
+  const [map, setMap] = useState<any>(null);
+  const displayMap = useMemo(
     () => (
-      <MarkerClusterGroup>
-        {stations.map((v, i) => (
-          <Marker key={i} position={[+v.lat, +v.lon]} />
-        ))}
-      </MarkerClusterGroup>
+      <MapContainer
+        ref={setMap}
+        center={center}
+        zoom={3}
+        className="mapContainer"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MarkerClusterGroup>
+          {stations.map((v, i) => (
+            <Marker key={i} position={[+v.lat, +v.lon]}>
+              <Popup minWidth={100}>
+                {v.name}: {v.desc}
+                <button onClick={() => setStation(v)}>Pick</button>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+      </MapContainer>
     ),
-    [stations]
+    []
   );
-  return (
-    <MapContainer center={position} zoom={3} className="mapContainer">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {cluster}
-    </MapContainer>
-  );
+  useEffect(() => {
+    if (map) {
+      if (pointsToFit.length) {
+        map.fitBounds(pointsToFit, { animate: true });
+      } else {
+        map.setView(center, map.getZoom(), { animate: true });
+      }
+    }
+  }, [center, pointsToFit, map]);
+  return <>{displayMap}</>;
 }
 export default MapStations;
