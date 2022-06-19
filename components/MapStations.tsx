@@ -34,7 +34,7 @@ function MapStations({
         />
         <MarkerClusterGroup>
           {stations.map((v, i) => (
-            <Marker key={i} position={[+v.lat, +v.lon]}>
+            <Marker key={i} position={[v.lat, v.lon]}>
               <Popup minWidth={100}>
                 {v.name}: {v.desc} (
                 {(

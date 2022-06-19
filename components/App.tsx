@@ -14,7 +14,7 @@ import {
 function stationToTree(stations: StationWithSummary[]) {
   return new kdTree(
     stations,
-    (a, b) => pseudoHaversine([+a.lat, +a.lon], [+b.lat, +b.lon]),
+    (a, b) => pseudoHaversine([a.lat, a.lon], [b.lat, b.lon]),
     ["lat", "lon"]
   );
 }
@@ -274,17 +274,17 @@ export default function App({
   return (
     <>
       <h1>Hareonna</h1>
-      <h2>(Optional Input: Search for a place)</h2>
+      <h2>(Optional: Search for a place)</h2>
       <SearchOSM
         selectLocation={(lat, lon) => {
           const hits = tree.nearest({ lat, lon } as StationWithSummary, 5);
           setCamera({
             center: [lat, lon],
-            pointsToFit: hits.map(([{ lat, lon }]) => [+lat, +lon]),
+            pointsToFit: hits.map(([{ lat, lon }]) => [lat, lon]),
           });
         }}
       />
-      <h2>Real Input: Click on a weather station and pick it</h2>
+      <h2>Or: Click on a weather station and pick it</h2>
       <MapStationsDynamic
         setStation={(newStation: StationWithSummary) => {
           setStations((curr) => {
@@ -298,7 +298,7 @@ export default function App({
         camera={camera}
         stationsPayload={stationsPayload}
       />
-      <h2>Output: Visualization of high/low temperature percentiles</h2>
+      <h2>Visualization of high/low temperature percentiles</h2>
       <DescribeStation
         stations={stations}
         ps={stationsPayload.percentiles}
