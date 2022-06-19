@@ -36,7 +36,9 @@ function MapStations({
           {stations.map((v, i) => (
             <Marker key={i} position={[+v.lat, +v.lon]}>
               <Popup minWidth={100}>
-                {v.name}: {v.desc}
+                {v.name}: {v.desc} (
+                {(Math.min(...v.summary.goods) / v.summary.days).toFixed(1)}%
+                available over {v.summary.days} days){" "}
                 <button onClick={() => setStation(v)}>Pick</button>
               </Popup>
             </Marker>

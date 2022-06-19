@@ -52,7 +52,7 @@ function SearchOSM({ selectLocation: latLonSelector }: SearchOSMProps) {
       <ul>
         {results.map((r, i) => (
           <li key={i}>
-            <button onClick={() => latLonSelector(+r.lat, +r.lon)}>Pick</button>{" "}
+            <button onClick={() => latLonSelector(+r.lat, +r.lon)}>Zoom</button>{" "}
             {r.display_name}: {r.lat}°, {r.lon}°{" "}
           </li>
         ))}
