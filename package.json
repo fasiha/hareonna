@@ -19,7 +19,6 @@
     "dayjs": "^1.11.3",
     "kd-tree-javascript": "^1.0.3",
     "leaflet": "^1.8.0",
-    "leaflet-defaulticon-compatibility": "^0.1.1",
     "leaflet.markercluster": "^1.5.3",
     "next": "^12.1.6",
     "progress": "^2.0.3",

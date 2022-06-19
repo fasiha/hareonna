@@ -8,18 +8,23 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import MarkerClusterGroup from "./MarkerClusterGroup";
 import { useEffect, useMemo, useState } from "react";
 import { StationsWithSummaryPayload, StationWithSummary } from "./interfaces";
+import L, { Map } from "leaflet";
+
+const topToShow = 10;
 
 interface MapStationsProps {
   stationsPayload: StationsWithSummaryPayload;
   camera: { center: [number, number]; pointsToFit: [number, number][] };
   setStation: (station: StationWithSummary) => void;
+  similarStations: StationWithSummary[];
 }
 function MapStations({
   camera: { center, pointsToFit },
   stationsPayload: { stations },
   setStation,
+  similarStations,
 }: MapStationsProps) {
-  const [map, setMap] = useState<any>(null);
+  const [map, setMap] = useState<Map | null>(null);
   const displayMap = useMemo(
     () => (
       <MapContainer
@@ -60,6 +65,42 @@ function MapStations({
       }
     }
   }, [center, pointsToFit, map]);
-  return <>{displayMap}</>;
+
+  const top = similarStations.slice(0, topToShow);
+  useEffect(() => {
+    if (map) {
+      const circles = top.map((o, i) =>
+        L.circle([o.lat, o.lon], {
+          color: "red",
+          fillColor: "$f03",
+          fillOpacity: 0.5,
+          radius: 500,
+        })
+          .addTo(map)
+          .bindPopup(`#${i + 1}`)
+      );
+      map.fitBounds(
+        top.map((s) => [s.lat, s.lon]),
+        { animate: true }
+      );
+
+      return () => {
+        circles.forEach((x) => x.remove());
+      };
+    }
+  }, [map, similarStations]);
+
+  return (
+    <>
+      {displayMap}
+      <ol>
+        {top.map((o) => (
+          <li key={o.name}>{`${o.name}: ${o.desc}: ${o.summary.lows.map(
+            (low, i) => `${low}/${o.summary.his[i]}`
+          )}`}</li>
+        ))}
+      </ol>
+    </>
+  );
 }
 export default MapStations;

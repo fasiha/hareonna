@@ -127,11 +127,13 @@ interface DescribeStationProps {
   stations: StationWithSummary[];
   ps: number[];
   deleteStation: (name: string) => void;
+  findSimilarTo: (station: StationWithSummary) => void;
 }
 function DescribeStation({
   stations,
   ps,
   deleteStation,
+  findSimilarTo,
 }: DescribeStationProps) {
   if (stations.length === 0) {
     return <div>(Waiting for you to pick some weather stations.)</div>;
@@ -211,7 +213,8 @@ function DescribeStation({
         {stations.map((s, i) => (
           <li key={s.name}>
             {stationDescriptions[i]}{" "}
-            <button onClick={() => deleteStation(s.name)}>Delete</button>
+            <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
+            <button onClick={() => findSimilarTo(s)}>Find Similar</button>
           </li>
         ))}
       </ol>
@@ -257,6 +260,55 @@ function DescribeStation({
   );
 }
 
+/* Final trick: similar to this station */
+interface SimilarToProps {
+  targetStation: StationWithSummary;
+  stations: StationWithSummary[];
+  ps: number[];
+  indexes?: { low: boolean; idx: number }[];
+}
+function SimilarTo({
+  targetStation,
+  stations,
+  ps,
+  indexes = [],
+}: SimilarToProps) {
+  if (indexes.length === 0) {
+    indexes = [];
+    for (const [pidx, p] of ps.entries()) {
+      if (p === 0.1 || p === 0.9) {
+        indexes.push({ low: true, idx: pidx });
+        indexes.push({ low: false, idx: pidx });
+      }
+    }
+  }
+
+  function distv(
+    a: StationWithSummary,
+    b: StationWithSummary,
+    v: typeof indexes
+  ) {
+    let ret = 0;
+    for (const { low, idx: i } of v) {
+      if (low) {
+        ret += (a.summary.lows[i] - b.summary.lows[i]) ** 2;
+      } else {
+        ret += (a.summary.his[i] - b.summary.his[i]) ** 2;
+      }
+    }
+    return ret;
+  }
+
+  const sorted = stations
+    .slice()
+    .sort(
+      (a, b) =>
+        distv(a, targetStation, indexes) - distv(b, targetStation, indexes)
+    )
+    .slice(1);
+  return sorted;
+}
+
 /* Main app */
 export default function App({
   stationsPayload,
@@ -265,11 +317,23 @@ export default function App({
 }) {
   const tree = useMemo(() => stationToTree(stationsPayload.stations), []);
 
-  const [stations, setStations] = useState<StationWithSummary[]>([]);
+  const [stationsOfInterest, setStationsOfInterest] = useState<
+    StationWithSummary[]
+  >([]);
   const [camera, setCamera] = useState({
     center: [0, 0] as [number, number],
     pointsToFit: [] as [number, number][],
   });
+  const [similarTo, setSimilarTo] = useState<undefined | StationWithSummary>(
+    undefined
+  );
+  const similarStations = similarTo
+    ? SimilarTo({
+        targetStation: similarTo,
+        stations: stationsPayload.stations,
+        ps: stationsPayload.percentiles,
+      })
+    : [];
 
   return (
     <>
@@ -287,7 +351,7 @@ export default function App({
       <h2>Or: Click on a weather station and pick it</h2>
       <MapStationsDynamic
         setStation={(newStation: StationWithSummary) => {
-          setStations((curr) => {
+          setStationsOfInterest((curr) => {
             if (curr.find((s) => s.name === newStation.name)) {
               // Don't add duplicates
               return curr;
@@ -297,14 +361,18 @@ export default function App({
         }}
         camera={camera}
         stationsPayload={stationsPayload}
+        similarStations={similarStations}
       />
       <h2>Visualization of high/low temperature percentiles</h2>
       <DescribeStation
-        stations={stations}
+        stations={stationsOfInterest}
         ps={stationsPayload.percentiles}
         deleteStation={(name) =>
-          setStations((curr) => curr.filter((s) => s.name !== name))
+          setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))
         }
+        findSimilarTo={(s) => {
+          setSimilarTo(s);
+        }}
       />
       <p>
         <small>
