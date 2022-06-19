@@ -327,13 +327,17 @@ export default function App({
   const [similarTo, setSimilarTo] = useState<undefined | StationWithSummary>(
     undefined
   );
-  const similarStations = similarTo
-    ? SimilarTo({
-        targetStation: similarTo,
-        stations: stationsPayload.stations,
-        ps: stationsPayload.percentiles,
-      })
-    : [];
+  const similarStations = useMemo(
+    () =>
+      similarTo
+        ? SimilarTo({
+            targetStation: similarTo,
+            stations: stationsPayload.stations,
+            ps: stationsPayload.percentiles,
+          })
+        : [],
+    [similarTo, stationsPayload]
+  );
 
   return (
     <>

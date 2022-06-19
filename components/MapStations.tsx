@@ -85,6 +85,7 @@ function MapStations({
       const lines = top.map((o) =>
         L.polyline([stat2ll(targetStation), stat2ll(o)], {
           color: "orange",
+          opacity: 0.25,
         }).addTo(map)
       );
 
