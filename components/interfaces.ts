@@ -39,12 +39,3 @@ export interface NominatimResult {
   extratags?: Record<string, string>;
   namedetails?: Record<string, string>;
 }
-
-/* Coordination data */
-export interface ClosestStation {
-  pickedDescription: string;
-  pickedLat: number;
-  pickedLon: number;
-  closestStation: StationWithSummary;
-  pickedToStationDist: number;
-}

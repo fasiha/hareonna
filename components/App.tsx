@@ -8,7 +8,6 @@ import {
   StationWithSummary,
   StationsWithSummaryPayload,
   NominatimResult,
-  ClosestStation,
 } from "./interfaces";
 
 /* Stations to distances */
@@ -129,7 +128,7 @@ const circledNumbers =
   "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿";
 
 interface DescribeStationProps {
-  stations: ClosestStation[];
+  stations: StationWithSummary[];
   ps: number[];
   deleteStation: (name: string) => void;
 }
@@ -142,29 +141,27 @@ function DescribeStation({
     return <div>(Waiting for you to pick some weather stations.)</div>;
   }
 
-  const days = stations[0].closestStation.summary.days;
+  const days = stations[0].summary.days;
   const stationDescriptions = stations.map(
     (s) =>
-      `${s.closestStation.name}: ${
-        s.closestStation.desc
-      } (${s.pickedToStationDist.toFixed(1)} km away from ${
-        s.pickedDescription
-      }; ${((Math.min(...s.closestStation.summary.goods) / days) * 100).toFixed(
-        1
-      )}% good data over ${days} days)`
+      `${s.name}: ${s.desc} (${(
+        (Math.min(...s.summary.goods) / days) *
+        100
+      ).toFixed(1)}% good data over ${days} days)`
   );
 
   const [width, setWidth] = useState(640);
   const plotRef = useRef(null);
   useEffect(() => {
     const data = stations.flatMap((s, sidx) =>
-      s.closestStation.summary.his.map((hi, i) => ({
+      s.summary.his.map((hi, i) => ({
         hi,
-        lo: s.closestStation.summary.lows[i],
+        lo: s.summary.lows[i],
         p: ps[i] * 100,
-        station: `${
-          circledNumbers[sidx] || sidx
-        } ${s.closestStation.desc.replaceAll(/\s+/g, " ")}`,
+        station: `${circledNumbers[sidx] || sidx} ${s.desc.replaceAll(
+          /\s+/g,
+          " "
+        )}`,
       }))
     );
     const chart = Plot.plot({
@@ -216,11 +213,9 @@ function DescribeStation({
       </p>
       <ol>
         {stations.map((s, i) => (
-          <li key={s.closestStation.name}>
+          <li key={s.name}>
             {stationDescriptions[i]}{" "}
-            <button onClick={() => deleteStation(s.closestStation.name)}>
-              Delete
-            </button>
+            <button onClick={() => deleteStation(s.name)}>Delete</button>
           </li>
         ))}
       </ol>
@@ -231,15 +226,9 @@ function DescribeStation({
               %<sub>ile</sub>
             </th>
             {stations.map((s, i) => (
-              <th
-                key={s.closestStation.name}
-                colSpan={2}
-                title={stationDescriptions[i]}
-              >
+              <th key={s.name} colSpan={2} title={stationDescriptions[i]}>
                 {circledNumbers[i] || i}{" "}
-                <button onClick={() => deleteStation(s.closestStation.name)}>
-                  x
-                </button>
+                <button onClick={() => deleteStation(s.name)}>x</button>
               </th>
             ))}
             <th rowSpan={2}>(notes)</th>
@@ -258,9 +247,9 @@ function DescribeStation({
             <tr key={p}>
               <td>{(p * 100).toFixed(1)}%</td>
               {stations.map((s) => (
-                <Fragment key={s.closestStation.name}>
-                  <td>{s.closestStation.summary.lows[i]} °C</td>
-                  <td>{s.closestStation.summary.his[i]} °C</td>
+                <Fragment key={s.name}>
+                  <td>{s.summary.lows[i]} °C</td>
+                  <td>{s.summary.his[i]} °C</td>
                 </Fragment>
               ))}
               <td>{percentileToDescription(p, days)}</td>
@@ -280,7 +269,7 @@ export default function App({
 }) {
   const tree = useMemo(() => stationToTree(stationsPayload.stations), []);
 
-  const [locations, setLocations] = useState<ClosestStation[]>([]);
+  const [stations, setStations] = useState<StationWithSummary[]>([]);
 
   return (
     <>
@@ -288,40 +277,26 @@ export default function App({
       <div>
         <SearchOSM
           selectLocation={(pickedLat, pickedLon, pickedDescription) =>
-            setLocations((curr) => {
+            setStations((curr) => {
               const [closestStation, pickedToStationDist] = findClosestStation(
                 pickedLat,
                 pickedLon,
                 tree
               );
-              if (
-                curr.find((s) => s.closestStation.name === closestStation.name)
-              ) {
+              if (curr.find((s) => s.name === closestStation.name)) {
                 // Don't add duplicates
                 return curr;
               }
-              return curr.concat({
-                pickedDescription,
-                pickedLon,
-                pickedLat,
-                closestStation,
-                pickedToStationDist,
-              });
+              return curr.concat(closestStation);
             })
           }
         />
-        <MapStationsDynamic
-          latlons={stationsPayload.stations.map(
-            (o) => [+o.lat, +o.lon] as [number, number]
-          )}
-        />
+        <MapStationsDynamic stationsPayload={stationsPayload} />
         <DescribeStation
-          stations={locations}
+          stations={stations}
           ps={stationsPayload.percentiles}
           deleteStation={(name) =>
-            setLocations((curr) =>
-              curr.filter((s) => s.closestStation.name !== name)
-            )
+            setStations((curr) => curr.filter((s) => s.name !== name))
           }
         />
         <p>
