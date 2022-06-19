@@ -16,13 +16,16 @@ interface MapStationsProps {
   stationsPayload: StationsWithSummaryPayload;
   camera: { center: [number, number]; pointsToFit: [number, number][] };
   setStation: (station: StationWithSummary) => void;
-  similarStations: StationWithSummary[];
+  similarStationsObj: {
+    targetStation: StationWithSummary | undefined;
+    similarStations: StationWithSummary[];
+  };
 }
 function MapStations({
   camera: { center, pointsToFit },
   stationsPayload: { stations },
   setStation,
-  similarStations,
+  similarStationsObj: { targetStation, similarStations },
 }: MapStationsProps) {
   const [map, setMap] = useState<Map | null>(null);
   const displayMap = useMemo(
@@ -68,9 +71,9 @@ function MapStations({
 
   const top = similarStations.slice(0, topToShow);
   useEffect(() => {
-    if (map) {
+    if (map && targetStation) {
       const circles = top.map((o, i) =>
-        L.circle([o.lat, o.lon], {
+        L.circle(stat2ll(o), {
           color: "red",
           fillColor: "$f03",
           fillOpacity: 0.5,
@@ -79,6 +82,12 @@ function MapStations({
           .addTo(map)
           .bindPopup(`#${i + 1}`)
       );
+      const lines = top.map((o) =>
+        L.polyline([stat2ll(targetStation), stat2ll(o)], {
+          color: "orange",
+        }).addTo(map)
+      );
+
       map.fitBounds(
         top.map((s) => [s.lat, s.lon]),
         { animate: true }
@@ -86,6 +95,7 @@ function MapStations({
 
       return () => {
         circles.forEach((x) => x.remove());
+        lines.forEach((x) => x.remove());
       };
     }
   }, [map, similarStations]);
@@ -104,3 +114,5 @@ function MapStations({
   );
 }
 export default MapStations;
+
+const stat2ll = (s: StationWithSummary) => [s.lat, s.lon] as [number, number];

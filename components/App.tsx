@@ -361,7 +361,7 @@ export default function App({
         }}
         camera={camera}
         stationsPayload={stationsPayload}
-        similarStations={similarStations}
+        similarStationsObj={{ similarStations, targetStation: similarTo }}
       />
       <h2>Visualization of high/low temperature percentiles</h2>
       <DescribeStation
