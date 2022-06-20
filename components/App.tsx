@@ -430,17 +430,33 @@ export default function App({
       />
       <h2>Visualization of high/low temperature percentiles</h2>
       <p>
-        <button onClick={() => flipPage(-nPerPage)} title="Jump back">
+        <button
+          disabled={firstRestIdx <= 1}
+          onClick={() => flipPage(-nPerPage)}
+          title="Jump back"
+        >
           ⇇
         </button>{" "}
-        <button onClick={() => flipPage(-1)} title="Step back one">
+        <button
+          disabled={firstRestIdx <= 1}
+          onClick={() => flipPage(-1)}
+          title="Step back one"
+        >
           ←
         </button>{" "}
         |{" "}
-        <button onClick={() => flipPage(1)} title="Step ahead one">
+        <button
+          disabled={firstRestIdx >= stationsOfInterest.length - 1}
+          onClick={() => flipPage(1)}
+          title="Step ahead one"
+        >
           →
         </button>{" "}
-        <button onClick={() => flipPage(nPerPage)} title="Jump ahead">
+        <button
+          disabled={firstRestIdx >= stationsOfInterest.length - 1}
+          onClick={() => flipPage(nPerPage)}
+          title="Jump ahead"
+        >
           ⇉
         </button>{" "}
         <label htmlFor="nPerPage">Stations to show at once? </label>
