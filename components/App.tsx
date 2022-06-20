@@ -468,7 +468,7 @@ export default function App({
       <p>
         <button
           disabled={firstRestIdx <= 1}
-          onClick={() => flipPage(-nPerPage)}
+          onClick={() => flipPage(-(nPerPage - 1))}
           title="Jump back"
         >
           ⇇
@@ -490,7 +490,7 @@ export default function App({
         </button>{" "}
         <button
           disabled={firstRestIdx >= stationsOfInterest.length - 1}
-          onClick={() => flipPage(nPerPage)}
+          onClick={() => flipPage(nPerPage - 1)}
           title="Jump ahead"
         >
           ⇉
@@ -502,7 +502,8 @@ export default function App({
           min={2}
           value={nPerPage}
           onChange={(e) => setNPerPage(Math.max(2, +e.target.value))}
-        />
+        />{" "}
+        <button onClick={() => setStationsOfInterest([])}>Delete all!</button>
       </p>
       <DescribeStations
         showStations={show}
