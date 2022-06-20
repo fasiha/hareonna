@@ -12,15 +12,19 @@ function Intro() {
       <p>
         The details are on{" "}
         <a href="https://github.com/fasiha/hareonna/">GitHub</a> but in a
-        nutshell, I grabbed all ~13'500 global weather stations that had
-        temperature data over the last three years and looked at the temperature{" "}
-        <em>percentile</em>s. I think percentiles are a more compact set of
-        numbers to understand compared to the monthly averages Wikipedia has:
-        the table below will have the specifics but a 50-percentile low means
-        that half the days in the last three years were less than that value. A
-        10-percentile low means ~5 weeks of a year have lows lower than this,
-        and a 90-percentile low means ~5 weeks per year have lows{" "}
-        <em>higher</em> than this.
+        nutshell, I grabbed all ~13'500 global weather stations from the Global
+        Historical Climatology Network daily (
+        <a href="https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily">
+          GHCNd
+        </a>
+        ) dataset that had temperature data over the last three years and looked
+        at the temperature <em>percentile</em>s. I think percentiles are a more
+        compact set of numbers to understand compared to the monthly averages
+        Wikipedia has: the table below will have the specifics but a
+        50-percentile low means that half the days in the last three years were
+        less than that value. A 10-percentile low means ~5 weeks of a year have
+        lows lower than this, and a 90-percentile low means ~5 weeks per year
+        have lows <em>higher</em> than this.
       </p>
       <p>
         So something I enjoy doing is,
