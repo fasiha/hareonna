@@ -1,6 +1,6 @@
 function Intro() {
   return (
-    <details>
+    <details id="background">
       <summary>
         Click here for a little background behind this little app
       </summary>
@@ -49,6 +49,14 @@ function Intro() {
         called 「晴れ女」,{" "}
         <a href="https://jisho.org/search/晴れ女">"hareonna"</a>: a woman who
         brings good weather.)
+      </p>
+      <p
+        onClick={() => {
+          const e = document.querySelector("details#background");
+          if (e) (e as any).open = false;
+        }}
+      >
+        ▲ Close background
       </p>
     </details>
   );
