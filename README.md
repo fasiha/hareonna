@@ -1,4 +1,8 @@
-## Steps
+# Hareonna
+## Web app
+There's a React web app to visualzie this data: https://fasiha.github.io/hareonna/
+
+## Data generation steps
 Install [Node](https://nodejs.org) and [Git](https://git-scm.com). Run
 ```
 git clone https://github.com/fasiha/hareonna.git
@@ -19,6 +23,7 @@ node closest_station.js
 ```
 This outputs a small <10 MB file, `good-stations-summary.json`, with a number of percentiles for temperature highs/lows for all "good" weather stations that have had temperature data for the last three years (though some stations may have (considerable) missing temperature data within the three year period).
 
+## Python visualization
 Finally, you need a bunch of Python to render some maps (coming soon to JavaScript/browser):
 ```bash
 # requires numpy, matplotlib, basemap, basemap-data-hires (conda-forge package)
