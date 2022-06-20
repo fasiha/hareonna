@@ -76,10 +76,10 @@ function MapStations({
     if (map && targetStation) {
       const circles = top.map((o, i) =>
         L.circleMarker(stat2ll(o), {
-          color: "red",
-          fillColor: "$f03",
-          fillOpacity: 0.5,
-          radius: 5,
+          fillColor: "orange",
+          fillOpacity: 0.25,
+          radius: 3,
+          stroke: false,
         })
           .addTo(map)
           .bindPopup(`#${i + 1}`)
