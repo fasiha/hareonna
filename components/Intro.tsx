@@ -26,19 +26,19 @@ function Intro() {
         lows lower than this, and a 90-percentile low means ~5 weeks per year
         have lows <em>higher</em> than this.
       </p>
+      <p>So something I enjoy doing is,</p>
+      <ol>
+        <li>
+          first select a weather station near my home (you can either search
+          OpenStreetMap or just zoom around the map) and clicking{" "}
+          <button>Pick</button>.
+        </li>
+        <li>
+          Then find some <em>other</em> faraway place and click{" "}
+          <button>Find similar</button>.
+        </li>
+      </ol>
       <p>
-        So something I enjoy doing is,
-        <ol>
-          <li>
-            first select a weather station near my home (you can either search
-            OpenStreetMap or just zoom around the map) and clicking{" "}
-            <button>Pick</button>.
-          </li>
-          <li>
-            Then find some <em>other</em> faraway place and click{" "}
-            <button>Find similar</button>.
-          </li>
-        </ol>
         That should get you started! And sorry, as you can tell from the buttons
         and the widgets and the cobbled-together nature of everything, this was
         thrown together in literally a weekend, but I hope you like it!
