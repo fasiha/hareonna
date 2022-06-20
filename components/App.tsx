@@ -120,46 +120,70 @@ function percentileToDescription(p: number, tot: number): string {
   return ret;
 }
 
-const circledNumbers =
-  "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿";
+function circleNumber(n: number): string {
+  const circledNumbers =
+    "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵㊶㊷㊸㊹㊺㊻㊼㊽㊾㊿";
+  return circledNumbers[n] || "" + n;
+}
 
+function paginateWithFirst<T>(
+  all: T[],
+  nPerPage: number,
+  firstRest: number
+): { val: T; valIdx: number }[] {
+  if (all.length === 0) {
+    return [];
+  }
+  const first = all[0];
+  firstRest = Math.max(firstRest, 1);
+  const rest = all.slice(firstRest, firstRest + nPerPage - 1);
+  const show = [first].concat(rest);
+  const showIdxs = [0].concat(rest.map((_, i) => i + firstRest));
+  return show.map((val, i) => ({ val, valIdx: showIdxs[i] }));
+}
+
+type PaginatedStations = ReturnType<
+  typeof paginateWithFirst<StationWithSummary>
+>;
 interface DescribeStationProps {
-  stations: StationWithSummary[];
+  showStations: PaginatedStations;
+  allStations: StationWithSummary[];
   ps: number[];
   deleteStation: (name: string) => void;
   setSimilarTo: (station: StationWithSummary) => void;
 }
-function DescribeStation({
-  stations,
+function DescribeStations({
+  showStations,
+  allStations,
   ps,
   deleteStation,
   setSimilarTo,
 }: DescribeStationProps) {
-  if (stations.length === 0) {
-    return <div>(Waiting for you to pick some weather stations.)</div>;
+  if (showStations.length === 0) {
+    return <p>(Waiting for you to pick some weather stations.)</p>;
   }
 
-  const days = stations[0].summary.days;
-  const stationDescriptions = stations.map(
-    (s) =>
+  const days = showStations[0].val.summary.days;
+  const stationDescriptions = new Map(
+    allStations.map((s) => [
+      s.name,
       `${s.name}: ${s.desc} (${(
         (Math.min(...s.summary.goods) / days) *
         100
-      ).toFixed(1)}% good data over ${days} days)`
+      ).toFixed(1)}% good data over ${days} days)`,
+    ])
   );
+  const showStationNames = new Set(showStations.map((s) => s.val.name));
 
   const [width, setWidth] = useState(640);
   const plotRef = useRef(null);
   useEffect(() => {
-    const data = stations.flatMap((s, sidx) =>
-      s.summary.his.map((hi, i) => ({
+    const data = showStations.flatMap(({ val: s, valIdx: sidx }, i) =>
+      s.summary.his.map((hi, pi) => ({
         hi,
-        lo: s.summary.lows[i],
-        p: ps[i] * 100,
-        station: `${circledNumbers[sidx] || sidx} ${s.desc.replaceAll(
-          /\s+/g,
-          " "
-        )}`,
+        lo: s.summary.lows[pi],
+        p: ps[pi] * 100,
+        station: `${circleNumber(sidx)} ${s.desc.replaceAll(/\s+/g, " ")}`,
       }))
     );
     const chart = Plot.plot({
@@ -212,40 +236,51 @@ function DescribeStation({
     return () => {
       chart.remove();
     };
-  }, [stations, width]);
+  }, [showStations, width]);
 
   return (
     <div>
-      <div style={{ width: "100%" }} ref={plotRef} />
-      <p>
-        (Tweak width: <button onClick={() => setWidth(width + 100)}>+</button>{" "}
-        <button onClick={() => setWidth(width - 100)}>-</button>)
-      </p>
       <ol>
-        {stations.map((s, i) => (
-          <li key={s.name}>
-            {stationDescriptions[i]}{" "}
+        {allStations.map((s) => (
+          <li
+            key={s.name}
+            className={
+              showStationNames.has(s.name)
+                ? "shown-station"
+                : "not-shown-station"
+            }
+          >
+            {stationDescriptions.get(s.name)}{" "}
             <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
             <button onClick={() => setSimilarTo(s)}>Find similar</button>
           </li>
         ))}
       </ol>
+      <div style={{ width: "100%" }} ref={plotRef} />
+      <p>
+        (Tweak width: <button onClick={() => setWidth(width + 100)}>+</button>{" "}
+        <button onClick={() => setWidth(width - 100)}>-</button>)
+      </p>
       <table>
         <thead>
           <tr>
             <th rowSpan={2}>
               %<sub>ile</sub>
             </th>
-            {stations.map((s, i) => (
-              <th key={s.name} colSpan={2} title={stationDescriptions[i]}>
-                {circledNumbers[i] || i}{" "}
+            {showStations.map(({ val: s, valIdx: sidx }) => (
+              <th
+                key={s.name}
+                colSpan={2}
+                title={stationDescriptions.get(s.name)}
+              >
+                {circleNumber(sidx)}{" "}
                 <button onClick={() => deleteStation(s.name)}>x</button>
               </th>
             ))}
             <th rowSpan={2}>(notes)</th>
           </tr>
           <tr>
-            {stations.map((s, i) => (
+            {showStations.map((_, i) => (
               <Fragment key={i}>
                 <th>Low</th>
                 <th>High</th>
@@ -257,7 +292,7 @@ function DescribeStation({
           {ps.map((p, i) => (
             <tr key={p}>
               <td>{(p * 100).toFixed(1)}%</td>
-              {stations.map((s) => (
+              {showStations.map(({ val: s }) => (
                 <Fragment key={s.name}>
                   <td>{s.summary.lows[i]} °C</td>
                   <td>{s.summary.his[i]} °C</td>
@@ -350,6 +385,19 @@ export default function App({
         : [],
     [similarTo, stationsPayload]
   );
+  const [nPerPage, setNPerPage] = useState(5);
+  const [firstRestIdx, setFirstRestIdx] = useState(1);
+  const show = paginateWithFirst(stationsOfInterest, nPerPage, firstRestIdx);
+  function flipPage(n: number) {
+    const ret = firstRestIdx + n;
+    if (ret <= 1) {
+      setFirstRestIdx(1);
+    } else if (ret >= stationsOfInterest.length - 1) {
+      setFirstRestIdx(stationsOfInterest.length - 1);
+    } else {
+      setFirstRestIdx(ret);
+    }
+  }
 
   return (
     <>
@@ -381,8 +429,15 @@ export default function App({
         similarStationsObj={{ similarStations, targetStation: similarTo }}
       />
       <h2>Visualization of high/low temperature percentiles</h2>
-      <DescribeStation
-        stations={stationsOfInterest}
+      <p>
+        <button onClick={() => flipPage(-nPerPage)}>⇇</button>{" "}
+        <button onClick={() => flipPage(-1)}>←</button> |{" "}
+        <button onClick={() => flipPage(1)}>→</button>{" "}
+        <button onClick={() => flipPage(nPerPage)}>⇉</button>
+      </p>
+      <DescribeStations
+        showStations={show}
+        allStations={stationsOfInterest}
         ps={stationsPayload.percentiles}
         deleteStation={(name) =>
           setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))

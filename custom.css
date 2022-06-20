@@ -11,3 +11,7 @@ td {
   height: 600px;
   color: black;
 }
+
+.not-shown-station {
+  color: gray;
+}
