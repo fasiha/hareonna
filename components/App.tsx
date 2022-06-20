@@ -17,6 +17,7 @@ import {
   NominatimResult,
   SimilarStations,
 } from "./interfaces";
+import Intro from "./Intro";
 
 /* Stations to distances */
 function stationToTree(stations: StationWithSummary[]) {
@@ -116,13 +117,13 @@ function percentileToDescription(p: number, tot: number): string {
   } else if (p === 1) {
     ret = `temp. max in ${tot} days`;
   } else if (p < 0.15) {
-    ret = `temp ≤ this ${pToDay(p)} days/year`;
+    ret = `temp. ≤ this ${pToDay(p)} days/year`;
   } else if (p < 0.51) {
-    ret = `temp ≤ this ${pToMon(p)} months/year`;
+    ret = `temp. ≤ this ${pToMon(p)} months/year`;
   } else if (1 - p < 0.15) {
-    ret = `temp ≥ this ${pToDay(1 - p)} days/year`;
+    ret = `temp. ≥ this ${pToDay(1 - p)} days/year`;
   } else {
-    ret = `temp ≥ this ${pToMon(1 - p)} months/year`;
+    ret = `temp. ≥ this ${pToMon(1 - p)} months/year`;
   }
   PercentileDescriptionCache.set(p, ret);
   return ret;
@@ -440,6 +441,7 @@ export default function App({
   return (
     <>
       <h1>Hareonna</h1>
+      <Intro />
       <h2>(Optional: Search for a place)</h2>
       <SearchOSM
         selectLocation={(lat, lon) => {
