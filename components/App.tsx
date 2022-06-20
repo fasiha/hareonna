@@ -167,11 +167,7 @@ function DescribeStations({
   deleteStation,
   setSimilarTo,
 }: DescribeStationProps) {
-  if (showStations.length === 0) {
-    return <p>(Waiting for you to pick some weather stations.)</p>;
-  }
-
-  const days = showStations[0].val.summary.days;
+  const days = showStations[0]?.val.summary.days || -1;
   const stationDescriptions = new Map(
     allStations.map((s) => [
       s.name,
@@ -186,6 +182,9 @@ function DescribeStations({
   const [width, setWidth] = useState(640);
   const plotRef = useRef(null);
   useEffect(() => {
+    if (showStations.length === 0) {
+      return;
+    }
     const data = showStations.flatMap(({ val: s, valIdx: sidx }, i) =>
       s.summary.his.map((hi, pi) => ({
         hi,
@@ -245,9 +244,17 @@ function DescribeStations({
       chart.remove();
     };
   }, [showStations, width]);
+  if (showStations.length === 0) {
+    return <p>(Waiting for you to pick some weather stations.)</p>;
+  }
 
   return (
     <div>
+      <div style={{ width: "100%" }} ref={plotRef} />
+      <p>
+        (Tweak width: <button onClick={() => setWidth(width + 100)}>+</button>{" "}
+        <button onClick={() => setWidth(width - 100)}>-</button>)
+      </p>
       <ol>
         {allStations.map((s) => (
           <li
@@ -264,11 +271,6 @@ function DescribeStations({
           </li>
         ))}
       </ol>
-      <div style={{ width: "100%" }} ref={plotRef} />
-      <p>
-        (Tweak width: <button onClick={() => setWidth(width + 100)}>+</button>{" "}
-        <button onClick={() => setWidth(width - 100)}>-</button>)
-      </p>
       <table>
         <thead>
           <tr>

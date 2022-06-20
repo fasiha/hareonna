@@ -82,7 +82,7 @@ function MapStations({
           stroke: false,
         })
           .addTo(map)
-          .bindPopup(`#${i + 1}`)
+          .bindPopup(`#${i + 2}`)
       );
       const lines = top.map((o, i) =>
         L.polyline([stat2ll(targetStation), stat2ll(o)], {
@@ -90,12 +90,12 @@ function MapStations({
           opacity: 0.25,
         })
           .addTo(map)
-          .bindPopup(`#${i + 1}`)
+          .bindPopup(`#${i + 2}`)
       );
       const texts = top.map((o, i) =>
         L.marker(stat2ll(o), {
           icon: L.divIcon({
-            html: `#${i + 1}`,
+            html: `#${i + 2}`,
             className: "text-below-similar",
           }),
         }).addTo(map)
