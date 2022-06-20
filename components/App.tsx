@@ -164,6 +164,7 @@ function DescribeStation({
     );
     const chart = Plot.plot({
       width: width,
+      height: "300",
       y: {
         grid: true,
         label: "↑ °C",
@@ -172,6 +173,17 @@ function DescribeStation({
       facet: { data, x: "station" },
       marks: [
         Plot.ruleY([10, 20, 30]),
+        Plot.areaY(
+          data.filter((s) => s.station === data[0].station),
+          {
+            x: "p",
+            y: "lo",
+            y2: "hi",
+            fillOpacity: 0.25,
+            fill: "station",
+            facet: false,
+          }
+        ),
         Plot.areaY(data, {
           x: "p",
           y: "lo",
