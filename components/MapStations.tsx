@@ -7,27 +7,26 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import MarkerClusterGroup from "./MarkerClusterGroup";
 import { useEffect, useMemo, useState } from "react";
-import { StationsWithSummaryPayload, StationWithSummary } from "./interfaces";
+import {
+  SimilarStations,
+  StationsWithSummaryPayload,
+  StationWithSummary,
+} from "./interfaces";
 import L, { Map } from "leaflet";
-
-const topToShow = 10;
 
 interface MapStationsProps {
   stationsPayload: StationsWithSummaryPayload;
   camera: { center: [number, number]; pointsToFit: [number, number][] };
   setStation: (station: StationWithSummary) => void;
   setSimilarTo: (station: StationWithSummary) => void;
-  similarStationsObj: {
-    targetStation: StationWithSummary | undefined;
-    similarStations: StationWithSummary[];
-  };
+  similarStationsObj: SimilarStations;
 }
 function MapStations({
   camera: { center, pointsToFit },
   stationsPayload: { stations },
   setStation,
   setSimilarTo,
-  similarStationsObj: { targetStation, similarStations },
+  similarStationsObj: { targetStation, similarStations, numToShow },
 }: MapStationsProps) {
   const [map, setMap] = useState<Map | null>(null);
   const displayMap = useMemo(
@@ -35,7 +34,7 @@ function MapStations({
       <MapContainer
         ref={setMap}
         center={center}
-        zoom={3}
+        zoom={2}
         className="mapContainer"
       >
         <TileLayer
@@ -72,23 +71,33 @@ function MapStations({
     }
   }, [center, pointsToFit, map]);
 
-  const top = similarStations.slice(0, topToShow);
+  const top = similarStations.slice(0, numToShow);
   useEffect(() => {
     if (map && targetStation) {
       const circles = top.map((o, i) =>
-        L.circle(stat2ll(o), {
+        L.circleMarker(stat2ll(o), {
           color: "red",
           fillColor: "$f03",
           fillOpacity: 0.5,
-          radius: 500,
+          radius: 5,
         })
           .addTo(map)
           .bindPopup(`#${i + 1}`)
       );
-      const lines = top.map((o) =>
+      const lines = top.map((o, i) =>
         L.polyline([stat2ll(targetStation), stat2ll(o)], {
           color: "orange",
           opacity: 0.25,
+        })
+          .addTo(map)
+          .bindPopup(`#${i + 1}`)
+      );
+      const texts = top.map((o, i) =>
+        L.marker(stat2ll(o), {
+          icon: L.divIcon({
+            html: `#${i + 1}`,
+            className: "text-below-similar",
+          }),
         }).addTo(map)
       );
 
@@ -100,22 +109,12 @@ function MapStations({
       return () => {
         circles.forEach((x) => x.remove());
         lines.forEach((x) => x.remove());
+        texts.forEach((x) => x.remove());
       };
     }
   }, [map, similarStations]);
 
-  return (
-    <>
-      {displayMap}
-      <ol>
-        {top.map((o) => (
-          <li key={o.name}>{`${o.name}: ${o.desc}: ${o.summary.lows.map(
-            (low, i) => `${low}/${o.summary.his[i]}`
-          )}`}</li>
-        ))}
-      </ol>
-    </>
-  );
+  return <>{displayMap}</>;
 }
 export default MapStations;
 

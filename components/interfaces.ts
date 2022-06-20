@@ -39,3 +39,10 @@ export interface NominatimResult {
   extratags?: Record<string, string>;
   namedetails?: Record<string, string>;
 }
+
+/* Similar stations, target and results */
+export interface SimilarStations {
+  targetStation: undefined|StationWithSummary;
+  similarStations: StationWithSummary[];
+  numToShow: number;
+}

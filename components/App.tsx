@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { kdTree } from "kd-tree-javascript";
 import * as Plot from "@observablehq/plot";
 import { pseudoToExact, pseudoHaversine } from "../haversine";
@@ -8,6 +15,7 @@ import {
   StationWithSummary,
   StationsWithSummaryPayload,
   NominatimResult,
+  SimilarStations,
 } from "./interfaces";
 
 /* Stations to distances */
@@ -308,18 +316,18 @@ function DescribeStations({
 }
 
 /* Final trick: similar to this station */
-interface SimilarToProps {
+interface SortBySimilarityArgs {
   targetStation: StationWithSummary;
   stations: StationWithSummary[];
   ps: number[];
   indexes?: { low: boolean; idx: number }[];
 }
-function SimilarTo({
+function sortBySimilarity({
   targetStation,
   stations,
   ps,
   indexes = [],
-}: SimilarToProps) {
+}: SortBySimilarityArgs) {
   if (indexes.length === 0) {
     indexes = [];
     for (const [pidx, p] of ps.entries()) {
@@ -330,6 +338,7 @@ function SimilarTo({
     }
   }
 
+  // Least-squares
   function distv(
     a: StationWithSummary,
     b: StationWithSummary,
@@ -357,6 +366,7 @@ function SimilarTo({
 }
 
 /* Main app */
+const SIMILAR_TO_SHOW = 20;
 export default function App({
   stationsPayload,
 }: {
@@ -371,20 +381,11 @@ export default function App({
     center: [0, 0] as [number, number],
     pointsToFit: [] as [number, number][],
   });
-  const [similarTo, setSimilarTo] = useState<undefined | StationWithSummary>(
-    undefined
-  );
-  const similarStations = useMemo(
-    () =>
-      similarTo
-        ? SimilarTo({
-            targetStation: similarTo,
-            stations: stationsPayload.stations,
-            ps: stationsPayload.percentiles,
-          })
-        : [],
-    [similarTo, stationsPayload]
-  );
+  const [similarTo, setSimilarTo] = useState<SimilarStations>({
+    numToShow: SIMILAR_TO_SHOW,
+    targetStation: undefined,
+    similarStations: [],
+  });
   const [nPerPage, setNPerPage] = useState(5);
   const [firstRestIdx, setFirstRestIdx] = useState(1);
   const show = paginateWithFirst(stationsOfInterest, nPerPage, firstRestIdx);
@@ -398,6 +399,41 @@ export default function App({
       setFirstRestIdx(ret);
     }
   }
+
+  const processSimilar = useCallback(
+    (targetStation: StationWithSummary) => {
+      const similarStations = sortBySimilarity({
+        targetStation,
+        stations: stationsPayload.stations,
+        ps: stationsPayload.percentiles,
+      });
+      setSimilarTo({
+        numToShow: SIMILAR_TO_SHOW,
+        targetStation,
+        similarStations,
+      });
+      setStationsOfInterest((curr) => {
+        const namesOfInterest = new Set(curr.map((o) => o.name));
+
+        const ret: StationWithSummary[] = [];
+        if (!namesOfInterest.has(targetStation.name)) {
+          ret.push(targetStation);
+        }
+        let n = 0;
+        for (const s of similarStations) {
+          if (!namesOfInterest.has(s.name)) {
+            ret.push(s);
+            n++;
+          }
+          if (n >= SIMILAR_TO_SHOW) {
+            break;
+          }
+        }
+        return curr.concat(ret);
+      });
+    },
+    [setSimilarTo, setStationsOfInterest]
+  );
 
   return (
     <>
@@ -414,7 +450,7 @@ export default function App({
       />
       <h2>Or: Click on a weather station and pick it</h2>
       <MapStationsDynamic
-        setSimilarTo={(s) => setSimilarTo(s)}
+        setSimilarTo={(s) => processSimilar(s)}
         setStation={(newStation: StationWithSummary) => {
           setStationsOfInterest((curr) => {
             if (curr.find((s) => s.name === newStation.name)) {
@@ -426,7 +462,7 @@ export default function App({
         }}
         camera={camera}
         stationsPayload={stationsPayload}
-        similarStationsObj={{ similarStations, targetStation: similarTo }}
+        similarStationsObj={similarTo}
       />
       <h2>Visualization of high/low temperature percentiles</h2>
       <p>
@@ -475,7 +511,7 @@ export default function App({
         deleteStation={(name) =>
           setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))
         }
-        setSimilarTo={(s) => setSimilarTo(s)}
+        setSimilarTo={(s) => processSimilar(s)}
       />
       <p>
         <small>
