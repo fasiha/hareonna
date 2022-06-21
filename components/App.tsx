@@ -438,6 +438,17 @@ export default function App({
     [setSimilarTo, setStationsOfInterest]
   );
 
+  useEffect(() => {
+    const names = new Set(loadUrl());
+    if (names.size) {
+      const s = stationsPayload.stations.filter((s) => names.has(s.name));
+      setStationsOfInterest(s);
+    }
+  }, []);
+  useEffect(() => {
+    saveUrl(stationsOfInterest);
+  }, [stationsOfInterest]);
+
   return (
     <>
       <h1>Hareonna</h1>
@@ -525,4 +536,16 @@ export default function App({
       </p>
     </>
   );
+}
+
+/* helpers */
+function loadUrl(): string[] {
+  return window.location.hash
+    .split(",")
+    .filter((s) => s.startsWith("s:"))
+    .map((s) => s.slice(2));
+}
+
+function saveUrl(stationsOfInterest: StationWithSummary[]) {
+  window.location.hash = stationsOfInterest.map((s) => "s:" + s.name).join(",");
 }
