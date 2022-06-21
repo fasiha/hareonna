@@ -436,15 +436,16 @@ export default function App({
 
   const processSimilar = useCallback(
     (targetStation: StationWithSummary) => {
-      const similarStations = sortBySimilarity({
-        targetStation,
-        stations: stationsPayload.stations,
-        ps: stationsPayload.percentiles,
-      });
+      const sameStation = similarTo.targetStation?.name === targetStation.name;
+      const similarStations = sameStation
+        ? similarTo.similarStations
+        : sortBySimilarity({
+            targetStation,
+            stations: stationsPayload.stations,
+            ps: stationsPayload.percentiles,
+          });
       const numToShow =
-        (similarTo.targetStation?.name === targetStation.name
-          ? similarTo.numToShow
-          : 0) + SIMILAR_TO_SHOW;
+        (sameStation ? similarTo.numToShow : 0) + SIMILAR_TO_SHOW;
       setSimilarTo({
         numToShow,
         targetStation,
