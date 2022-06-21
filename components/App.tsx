@@ -262,12 +262,12 @@ function DescribeStations({
         {primarySecondaryStations.map((s, i) => (
           <li
             key={s.name}
-            className={[
-              showStationNames.has(s.name)
+            className={
+              (showStationNames.has(s.name)
                 ? "shown-station"
-                : "not-shown-station",
-              i === nPrimaryStations - 1 ? "last-primary" : "non-last-primary",
-            ].join(" ")}
+                : "not-shown-station") +
+              (i === nPrimaryStations ? " first-similar-to" : "")
+            }
           >
             {i >= nPrimaryStations && `#${i - nPrimaryStations + 1} Similar: `}
             {stationDescriptions.get(s.name)}{" "}
