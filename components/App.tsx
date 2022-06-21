@@ -161,6 +161,7 @@ interface DescribeStationProps {
   deleteStation: (name: string) => void;
   setSimilarTo: (station: StationWithSummary) => void;
   selectLocation: (lat: number, lon: number) => void;
+  setStation: (station: StationWithSummary) => void;
 }
 function DescribeStations({
   stationsInPage,
@@ -170,6 +171,7 @@ function DescribeStations({
   deleteStation,
   setSimilarTo,
   selectLocation,
+  setStation,
 }: DescribeStationProps) {
   const days = stationsInPage[0]?.val.summary.days || -1;
   const stationDescriptions = new Map(
@@ -272,9 +274,13 @@ function DescribeStations({
           >
             {i >= numPicked && `#${i - numPicked + 1} Similar: `}
             {stationDescriptions.get(s.name)}{" "}
-            {i < numPicked && (
+            {i < numPicked ? (
               <>
                 <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
+              </>
+            ) : (
+              <>
+                <button onClick={() => setStation(s)}>Pick</button>{" "}
               </>
             )}
             <button onClick={() => setSimilarTo(s)}>Find similar</button>{" "}
@@ -578,6 +584,16 @@ export default function App({
           setCamera({
             center: [lat, lon],
             pointsToFit: hits.map(([{ lat, lon }]) => [lat, lon]),
+          });
+        }}
+        setStation={(newStation: StationWithSummary) => {
+          // Same logic as for above, consolidate?
+          setPickedStations((curr) => {
+            if (curr.find((s) => s.name === newStation.name)) {
+              // Don't add duplicates
+              return curr;
+            }
+            return curr.concat(newStation);
           });
         }}
       />
