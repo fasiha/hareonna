@@ -440,24 +440,6 @@ export default function App({
           return curr;
         }
         return curr.concat(targetStation);
-
-        const namesOfInterest = new Set(curr.map((o) => o.name));
-
-        const ret: StationWithSummary[] = [];
-        if (!namesOfInterest.has(targetStation.name)) {
-          ret.push(targetStation);
-        }
-        let n = 0;
-        for (const s of similarStations) {
-          if (!namesOfInterest.has(s.name)) {
-            ret.push(s);
-            n++;
-          }
-          if (n >= SIMILAR_TO_SHOW) {
-            break;
-          }
-        }
-        return curr.concat(ret);
       });
     },
     [setSimilarTo, setStationsOfInterest]
@@ -509,7 +491,10 @@ export default function App({
         }}
         camera={camera}
         stationsPayload={stationsPayload}
-        similarStationsObj={similarTo}
+        showStations={show}
+        primarySecondaryStations={primaryAndSecondaryStations}
+        nPrimaryStations={stationsOfInterest.length}
+        targetStation={similarTo.targetStation}
       />
       <h2>Visualization of high/low temperature percentiles</h2>
       <p>
@@ -551,12 +536,19 @@ export default function App({
           onChange={(e) => setNPerPage(Math.max(2, +e.target.value))}
         />{" "}
         <button
+          disabled={stationsOfInterest.length === 0}
           onClick={() => {
             setStationsOfInterest([]);
             setSimilarTo(defaultSimilarTo);
           }}
         >
           Delete all!
+        </button>{" "}
+        <button
+          disabled={!similarTo.targetStation}
+          onClick={() => setSimilarTo(defaultSimilarTo)}
+        >
+          Clear similar
         </button>
       </p>
       <DescribeStations

@@ -20,17 +20,20 @@ interface MapStationsProps {
   camera: { center: [number, number]; pointsToFit: [number, number][] };
   setStation: (station: StationWithSummary) => void;
   setSimilarTo: (station: StationWithSummary) => void;
-  similarStationsObj: SimilarStations;
-  // showStations: PaginatedStations;
-  // primarySecondaryStations: StationWithSummary[];
-  // nPrimaryStations: number;
+  showStations: PaginatedStations;
+  primarySecondaryStations: StationWithSummary[];
+  nPrimaryStations: number;
+  targetStation: StationWithSummary | undefined;
 }
 function MapStations({
   camera: { center, pointsToFit },
   stationsPayload: { stations },
   setStation,
   setSimilarTo,
-  similarStationsObj: { targetStation, similarStations, numToShow },
+  showStations,
+  primarySecondaryStations,
+  nPrimaryStations,
+  targetStation,
 }: MapStationsProps) {
   const [map, setMap] = useState<Map | null>(null);
   const displayMap = useMemo(
@@ -75,48 +78,74 @@ function MapStations({
     }
   }, [center, pointsToFit, map]);
 
-  const top = similarStations.slice(0, numToShow);
   useEffect(() => {
-    if (map && targetStation) {
-      const circles = top.map((o, i) =>
+    if (map) {
+      const primary = primarySecondaryStations.slice(0, nPrimaryStations);
+      let circles = primary.map((o, i) =>
         L.circleMarker(stat2ll(o), {
-          fillColor: "orange",
-          fillOpacity: 0.25,
-          radius: 3,
-          stroke: false,
-        })
-          .addTo(map)
-          .bindPopup(`#${i + 2}`)
-      );
-      const lines = top.map((o, i) =>
-        L.polyline([stat2ll(targetStation), stat2ll(o)], {
           color: "orange",
-          opacity: 0.25,
+          weight: 3,
+          opacity: 0.75,
+          radius: 9,
         })
           .addTo(map)
-          .bindPopup(`#${i + 2}`)
+          .bindPopup(`(${i + 1})`)
       );
-      const texts = top.map((o, i) =>
-        L.marker(stat2ll(o), {
-          icon: L.divIcon({
-            html: `#${i + 2}`,
-            className: "text-below-similar",
-          }),
-        }).addTo(map)
-      );
-
-      map.fitBounds(
-        top.map((s) => [s.lat, s.lon]),
-        { animate: true }
-      );
+      if (targetStation) {
+        const shownNames = new Set(showStations.map((s) => s.val.name));
+        const secondary = primarySecondaryStations.slice(nPrimaryStations);
+        circles = circles.concat(
+          secondary.map((o, i) =>
+            L.circleMarker(stat2ll(o), {
+              fillColor: "orange",
+              fillOpacity: shownNames.has(o.name) ? 0.5 : 0.25,
+              radius: shownNames.has(o.name) ? 5 : 3,
+              stroke: false,
+            })
+              .addTo(map)
+              .bindPopup(`#${i + 1} Similar`)
+          )
+        );
+        const lines = secondary.map((o, i) =>
+          L.polyline([stat2ll(targetStation), stat2ll(o)], {
+            color: "orange",
+            opacity: shownNames.has(o.name) ? 0.5 : 0.25,
+          })
+            .addTo(map)
+            .bindPopup(`#${i + 1} Similar`)
+        );
+        const texts = secondary.map((o, i) =>
+          shownNames.has(o.name)
+            ? L.marker(stat2ll(o), {
+                icon: L.divIcon({
+                  html: `#${i + 1}`,
+                  className: "text-below-similar",
+                }),
+              }).addTo(map)
+            : undefined
+        );
+        map.fitBounds(
+          secondary.map((s) => [s.lat, s.lon]),
+          { animate: true }
+        );
+        return () => {
+          circles.forEach((x) => x.remove());
+          lines.forEach((x) => x.remove());
+          texts.forEach((x) => x?.remove());
+        };
+      }
 
       return () => {
         circles.forEach((x) => x.remove());
-        lines.forEach((x) => x.remove());
-        texts.forEach((x) => x.remove());
       };
     }
-  }, [map, similarStations]);
+  }, [
+    map,
+    showStations,
+    primarySecondaryStations,
+    nPrimaryStations,
+    targetStation,
+  ]);
 
   return <>{displayMap}</>;
 }
