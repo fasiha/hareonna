@@ -38,6 +38,22 @@ And some plots: these are *very* hard to read, sorry! I'll make them into browse
 
 ![Map](./map.png)
 
+## Web app build
+I use GitHub Pages to serve the contents of the `gh-pages` branch as a static site on https://fasiha.github.io/hareonna/.
+
+To set it up, I use [Kris Jenkins'](http://blog.jenkster.com/2016/02/git-for-static-sites.html) tip to check out the `gh-pages` branch as a Git worktree. Starting in a checkout of this repo:
+```bash
+git worktree add ../hareonna-dist gh-pages
+```
+
+Then every time I want to rebuild the site, I run the following script:
+```bash
+rmtrash ../hareonna-dist/*
+git rev-parse HEAD > ../hareonna-dist/source-sha.txt
+npm run build-static && cp -pr out/* ../hareonna-dist && cd ../hareonna-dist && git add . && git commit -am dist --amend && git push -f && cd -
+```
+(`rmtrash` is my alias for a safe `rm`, feel free to replace this with `rm -fr`.)
+
 ## Notes
 
 All: https://www.ncei.noaa.gov/data/global-historical-climatology-network-daily/access/
