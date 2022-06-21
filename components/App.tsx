@@ -401,14 +401,21 @@ export default function App({
   const [similarTo, setSimilarTo] = useState<SimilarStations>(defaultSimilarTo);
   const [nPerPage, setNPerPage] = useState(5);
   const [firstRestIdx, setFirstRestIdx] = useState(1);
-  const pickedAndSimilarStations = pickedStations.concat(
-    similarTo.similarStations.slice(0, similarTo.numToShow)
+
+  // these have to memoized because we send these to be mapped.
+  // TODO: shift the entire pagination to the two components so this is less confusing.
+  const pickedAndSimilarStations = useMemo(
+    () =>
+      pickedStations.concat(
+        similarTo.similarStations.slice(0, similarTo.numToShow)
+      ),
+    [pickedStations, similarTo]
   );
-  const show = paginateWithFirst(
-    pickedAndSimilarStations,
-    nPerPage,
-    firstRestIdx
+  const show = useMemo(
+    () => paginateWithFirst(pickedAndSimilarStations, nPerPage, firstRestIdx),
+    [nPerPage, firstRestIdx, pickedAndSimilarStations]
   );
+
   function flipPage(n: number) {
     const ret = firstRestIdx + n;
     if (ret <= 1) {
