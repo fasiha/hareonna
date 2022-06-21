@@ -160,6 +160,7 @@ interface DescribeStationProps {
   ps: number[];
   deleteStation: (name: string) => void;
   setSimilarTo: (station: StationWithSummary) => void;
+  selectLocation: (lat: number, lon: number) => void;
 }
 function DescribeStations({
   showStations,
@@ -167,6 +168,7 @@ function DescribeStations({
   ps,
   deleteStation,
   setSimilarTo,
+  selectLocation,
 }: DescribeStationProps) {
   const days = showStations[0]?.val.summary.days || -1;
   const stationDescriptions = new Map(
@@ -268,7 +270,8 @@ function DescribeStations({
           >
             {stationDescriptions.get(s.name)}{" "}
             <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
-            <button onClick={() => setSimilarTo(s)}>Find similar</button>
+            <button onClick={() => setSimilarTo(s)}>Find similar</button>{" "}
+            <button onClick={() => selectLocation(s.lat, s.lon)}>Zoom</button>
           </li>
         ))}
       </ol>
@@ -439,10 +442,17 @@ export default function App({
   );
 
   useEffect(() => {
-    const names = new Set(loadUrl());
-    if (names.size) {
-      const s = stationsPayload.stations.filter((s) => names.has(s.name));
-      setStationsOfInterest(s);
+    const wanted = loadUrl();
+    if (wanted.length) {
+      const wantedToIdx = new Map(wanted.map((s, i) => [s, i]));
+      const found: StationWithSummary[] = [];
+      for (const s of stationsPayload.stations) {
+        const hit = wantedToIdx.get(s.name);
+        if (hit !== undefined) {
+          found[hit] = s;
+        }
+      }
+      setStationsOfInterest(found.filter((s) => !!s));
     }
   }, []);
   useEffect(() => {
@@ -528,6 +538,13 @@ export default function App({
           setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))
         }
         setSimilarTo={(s) => processSimilar(s)}
+        selectLocation={(lat, lon) => {
+          const hits = tree.nearest({ lat, lon } as StationWithSummary, 3);
+          setCamera({
+            center: [lat, lon],
+            pointsToFit: hits.map(([{ lat, lon }]) => [lat, lon]),
+          });
+        }}
       />
       <p>
         <small>
@@ -541,6 +558,7 @@ export default function App({
 /* helpers */
 function loadUrl(): string[] {
   return window.location.hash
+    .replace(/^#*/, "")
     .split(",")
     .filter((s) => s.startsWith("s:"))
     .map((s) => s.slice(2));
