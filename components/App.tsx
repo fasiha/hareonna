@@ -290,7 +290,7 @@ function DescribeStations({
             </th>
             {stationsInPage.map(({ val: s, valIdx: sidx }) => (
               <th
-                key={s.name}
+                key={s.name + (sidx < numPicked)}
                 colSpan={2}
                 title={stationDescriptions.get(s.name)}
               >
@@ -313,8 +313,8 @@ function DescribeStations({
           {ps.map((p, i) => (
             <tr key={p}>
               <td>{(p * 100).toFixed(1)}%</td>
-              {stationsInPage.map(({ val: s }) => (
-                <Fragment key={s.name}>
+              {stationsInPage.map(({ val: s, valIdx }) => (
+                <Fragment key={s.name + (valIdx < numPicked)}>
                   <td>{s.summary.lows[i]} °C</td>
                   <td>{s.summary.his[i]} °C</td>
                 </Fragment>
