@@ -19,6 +19,7 @@ import {
   PaginatedStations,
 } from "./interfaces";
 import Intro from "./Intro";
+import { unique } from "../utils";
 
 /* Stations to distances */
 function stationToTree(stations: StationWithSummary[]) {
@@ -261,7 +262,7 @@ function DescribeStations({
       <ol>
         {pickedAndSimilarStations.map((s, i) => (
           <li
-            key={s.name}
+            key={s.name + (i < numPicked)}
             className={
               (showStationNames.has(s.name)
                 ? "shown-station"
