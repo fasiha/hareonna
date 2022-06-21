@@ -46,3 +46,8 @@ export interface SimilarStations {
   similarStations: StationWithSummary[];
   numToShow: number;
 }
+
+/* My weird pagination structure */
+export type PaginatedStations = {
+  val: StationWithSummary; valIdx: number
+}[];

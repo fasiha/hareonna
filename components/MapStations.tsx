@@ -8,6 +8,7 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import MarkerClusterGroup from "./MarkerClusterGroup";
 import { useEffect, useMemo, useState } from "react";
 import {
+  PaginatedStations,
   SimilarStations,
   StationsWithSummaryPayload,
   StationWithSummary,
@@ -20,6 +21,9 @@ interface MapStationsProps {
   setStation: (station: StationWithSummary) => void;
   setSimilarTo: (station: StationWithSummary) => void;
   similarStationsObj: SimilarStations;
+  // showStations: PaginatedStations;
+  // primarySecondaryStations: StationWithSummary[];
+  // nPrimaryStations: number;
 }
 function MapStations({
   camera: { center, pointsToFit },

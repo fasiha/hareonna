@@ -16,6 +16,7 @@ import {
   StationsWithSummaryPayload,
   NominatimResult,
   SimilarStations,
+  PaginatedStations,
 } from "./interfaces";
 import Intro from "./Intro";
 
@@ -151,12 +152,10 @@ function paginateWithFirst<T>(
   return show.map((val, i) => ({ val, valIdx: showIdxs[i] }));
 }
 
-type PaginatedStations = ReturnType<
-  typeof paginateWithFirst<StationWithSummary>
->;
 interface DescribeStationProps {
   showStations: PaginatedStations;
-  allStations: StationWithSummary[];
+  primarySecondaryStations: StationWithSummary[];
+  nPrimaryStations: number;
   ps: number[];
   deleteStation: (name: string) => void;
   setSimilarTo: (station: StationWithSummary) => void;
@@ -164,7 +163,8 @@ interface DescribeStationProps {
 }
 function DescribeStations({
   showStations,
-  allStations,
+  primarySecondaryStations,
+  nPrimaryStations,
   ps,
   deleteStation,
   setSimilarTo,
@@ -172,7 +172,7 @@ function DescribeStations({
 }: DescribeStationProps) {
   const days = showStations[0]?.val.summary.days || -1;
   const stationDescriptions = new Map(
-    allStations.map((s) => [
+    primarySecondaryStations.map((s) => [
       s.name,
       `${s.name}: ${s.desc} (${(
         (Math.min(...s.summary.goods) / days) *
@@ -259,17 +259,23 @@ function DescribeStations({
         <button onClick={() => setWidth(width - 100)}>-</button>)
       </p>
       <ol>
-        {allStations.map((s) => (
+        {primarySecondaryStations.map((s, i) => (
           <li
             key={s.name}
-            className={
+            className={[
               showStationNames.has(s.name)
                 ? "shown-station"
-                : "not-shown-station"
-            }
+                : "not-shown-station",
+              i === nPrimaryStations - 1 ? "last-primary" : "non-last-primary",
+            ].join(" ")}
           >
+            {i >= nPrimaryStations && `#${i - nPrimaryStations + 1} Similar: `}
             {stationDescriptions.get(s.name)}{" "}
-            <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
+            {i < nPrimaryStations && (
+              <>
+                <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
+              </>
+            )}
             <button onClick={() => setSimilarTo(s)}>Find similar</button>{" "}
             <button onClick={() => selectLocation(s.lat, s.lon)}>Zoom</button>
           </li>
@@ -373,6 +379,11 @@ function sortBySimilarity({
 
 /* Main app */
 const SIMILAR_TO_SHOW = 20;
+const defaultSimilarTo = {
+  numToShow: 0,
+  targetStation: undefined,
+  similarStations: [],
+};
 export default function App({
   stationsPayload,
 }: {
@@ -387,20 +398,23 @@ export default function App({
     center: [0, 0] as [number, number],
     pointsToFit: [] as [number, number][],
   });
-  const [similarTo, setSimilarTo] = useState<SimilarStations>({
-    numToShow: SIMILAR_TO_SHOW,
-    targetStation: undefined,
-    similarStations: [],
-  });
+  const [similarTo, setSimilarTo] = useState<SimilarStations>(defaultSimilarTo);
   const [nPerPage, setNPerPage] = useState(5);
   const [firstRestIdx, setFirstRestIdx] = useState(1);
-  const show = paginateWithFirst(stationsOfInterest, nPerPage, firstRestIdx);
+  const primaryAndSecondaryStations = stationsOfInterest.concat(
+    similarTo.similarStations.slice(0, similarTo.numToShow)
+  );
+  const show = paginateWithFirst(
+    primaryAndSecondaryStations,
+    nPerPage,
+    firstRestIdx
+  );
   function flipPage(n: number) {
     const ret = firstRestIdx + n;
     if (ret <= 1) {
       setFirstRestIdx(1);
-    } else if (ret >= stationsOfInterest.length - 1) {
-      setFirstRestIdx(stationsOfInterest.length - 1);
+    } else if (ret >= primaryAndSecondaryStations.length - 1) {
+      setFirstRestIdx(primaryAndSecondaryStations.length - 1);
     } else {
       setFirstRestIdx(ret);
     }
@@ -413,12 +427,20 @@ export default function App({
         stations: stationsPayload.stations,
         ps: stationsPayload.percentiles,
       });
-      setSimilarTo({
-        numToShow: SIMILAR_TO_SHOW,
+      setSimilarTo((curr) => ({
+        numToShow:
+          (curr.targetStation?.name === targetStation.name
+            ? curr.numToShow
+            : 0) + SIMILAR_TO_SHOW,
         targetStation,
         similarStations,
-      });
+      }));
       setStationsOfInterest((curr) => {
+        if (curr.find((s) => s.name === targetStation.name)) {
+          return curr;
+        }
+        return curr.concat(targetStation);
+
         const namesOfInterest = new Set(curr.map((o) => o.name));
 
         const ret: StationWithSummary[] = [];
@@ -507,14 +529,14 @@ export default function App({
         </button>{" "}
         |{" "}
         <button
-          disabled={firstRestIdx >= stationsOfInterest.length - 1}
+          disabled={firstRestIdx >= primaryAndSecondaryStations.length - 1}
           onClick={() => flipPage(1)}
           title="Step ahead one"
         >
           →
         </button>{" "}
         <button
-          disabled={firstRestIdx >= stationsOfInterest.length - 1}
+          disabled={firstRestIdx >= primaryAndSecondaryStations.length - 1}
           onClick={() => flipPage(nPerPage - 1)}
           title="Jump ahead"
         >
@@ -528,11 +550,19 @@ export default function App({
           value={nPerPage}
           onChange={(e) => setNPerPage(Math.max(2, +e.target.value))}
         />{" "}
-        <button onClick={() => setStationsOfInterest([])}>Delete all!</button>
+        <button
+          onClick={() => {
+            setStationsOfInterest([]);
+            setSimilarTo(defaultSimilarTo);
+          }}
+        >
+          Delete all!
+        </button>
       </p>
       <DescribeStations
         showStations={show}
-        allStations={stationsOfInterest}
+        primarySecondaryStations={primaryAndSecondaryStations}
+        nPrimaryStations={stationsOfInterest.length}
         ps={stationsPayload.percentiles}
         deleteStation={(name) =>
           setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))
@@ -565,5 +595,10 @@ function loadUrl(): string[] {
 }
 
 function saveUrl(stationsOfInterest: StationWithSummary[]) {
-  window.location.hash = stationsOfInterest.map((s) => "s:" + s.name).join(",");
+  if (stationsOfInterest.length) {
+    // if we reset it to "#", the browser might jump to top of page :-/
+    window.location.hash = stationsOfInterest
+      .map((s) => "s:" + s.name)
+      .join(",");
+  }
 }
