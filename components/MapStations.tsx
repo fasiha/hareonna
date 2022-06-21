@@ -14,6 +14,7 @@ import {
   StationWithSummary,
 } from "./interfaces";
 import L, { Map } from "leaflet";
+import { stat2ll } from "../utils";
 
 interface MapStationsProps {
   stationsPayload: StationsWithSummaryPayload;
@@ -124,10 +125,6 @@ function MapStations({
               }).addTo(map)
             : undefined
         );
-        map.fitBounds(
-          similars.map((s) => [s.lat, s.lon]),
-          { animate: true }
-        );
         return () => {
           circles.forEach((x) => x.remove());
           lines.forEach((x) => x.remove());
@@ -144,5 +141,3 @@ function MapStations({
   return <>{displayMap}</>;
 }
 export default MapStations;
-
-const stat2ll = (s: StationWithSummary) => [s.lat, s.lon] as [number, number];

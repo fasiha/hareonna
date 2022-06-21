@@ -19,7 +19,7 @@ import {
   PaginatedStations,
 } from "./interfaces";
 import Intro from "./Intro";
-import { unique } from "../utils";
+import { stat2ll, unique } from "../utils";
 
 /* Stations to distances */
 function stationToTree(stations: StationWithSummary[]) {
@@ -435,14 +435,19 @@ export default function App({
         stations: stationsPayload.stations,
         ps: stationsPayload.percentiles,
       });
-      setSimilarTo((curr) => ({
-        numToShow:
-          (curr.targetStation?.name === targetStation.name
-            ? curr.numToShow
-            : 0) + SIMILAR_TO_SHOW,
+      const numToShow =
+        (similarTo.targetStation?.name === targetStation.name
+          ? similarTo.numToShow
+          : 0) + SIMILAR_TO_SHOW;
+      setSimilarTo({
+        numToShow,
         targetStation,
         similarStations,
-      }));
+      });
+      setCamera({
+        center: stat2ll(targetStation),
+        pointsToFit: similarStations.slice(0, numToShow).map(stat2ll),
+      });
       setPickedStations((curr) => {
         if (curr.find((s) => s.name === targetStation.name)) {
           return curr;
@@ -450,7 +455,7 @@ export default function App({
         return curr.concat(targetStation);
       });
     },
-    [setSimilarTo, setPickedStations]
+    [setSimilarTo, setPickedStations, setCamera, similarTo]
   );
 
   useEffect(() => {
