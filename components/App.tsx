@@ -153,26 +153,26 @@ function paginateWithFirst<T>(
 }
 
 interface DescribeStationProps {
-  showStations: PaginatedStations;
-  primarySecondaryStations: StationWithSummary[];
-  nPrimaryStations: number;
+  stationsInPage: PaginatedStations;
+  pickedAndSimilarStations: StationWithSummary[];
+  numPicked: number;
   ps: number[];
   deleteStation: (name: string) => void;
   setSimilarTo: (station: StationWithSummary) => void;
   selectLocation: (lat: number, lon: number) => void;
 }
 function DescribeStations({
-  showStations,
-  primarySecondaryStations,
-  nPrimaryStations,
+  stationsInPage,
+  pickedAndSimilarStations,
+  numPicked,
   ps,
   deleteStation,
   setSimilarTo,
   selectLocation,
 }: DescribeStationProps) {
-  const days = showStations[0]?.val.summary.days || -1;
+  const days = stationsInPage[0]?.val.summary.days || -1;
   const stationDescriptions = new Map(
-    primarySecondaryStations.map((s) => [
+    pickedAndSimilarStations.map((s) => [
       s.name,
       `${s.name}: ${s.desc} (${(
         (Math.min(...s.summary.goods) / days) *
@@ -180,15 +180,15 @@ function DescribeStations({
       ).toFixed(1)}% good data over ${days} days)`,
     ])
   );
-  const showStationNames = new Set(showStations.map((s) => s.val.name));
+  const showStationNames = new Set(stationsInPage.map((s) => s.val.name));
 
   const [width, setWidth] = useState(640);
   const plotRef = useRef(null);
   useEffect(() => {
-    if (showStations.length === 0) {
+    if (stationsInPage.length === 0) {
       return;
     }
-    const data = showStations.flatMap(({ val: s, valIdx: sidx }, i) =>
+    const data = stationsInPage.flatMap(({ val: s, valIdx: sidx }, i) =>
       s.summary.his.map((hi, pi) => ({
         hi,
         lo: s.summary.lows[pi],
@@ -246,8 +246,8 @@ function DescribeStations({
     return () => {
       chart.remove();
     };
-  }, [showStations, width]);
-  if (showStations.length === 0) {
+  }, [stationsInPage, width]);
+  if (stationsInPage.length === 0) {
     return <p>(Waiting for you to pick some weather stations.)</p>;
   }
 
@@ -259,19 +259,19 @@ function DescribeStations({
         <button onClick={() => setWidth(width - 100)}>-</button>)
       </p>
       <ol>
-        {primarySecondaryStations.map((s, i) => (
+        {pickedAndSimilarStations.map((s, i) => (
           <li
             key={s.name}
             className={
               (showStationNames.has(s.name)
                 ? "shown-station"
                 : "not-shown-station") +
-              (i === nPrimaryStations ? " first-similar-to" : "")
+              (i === numPicked ? " first-similar-to" : "")
             }
           >
-            {i >= nPrimaryStations && `#${i - nPrimaryStations + 1} Similar: `}
+            {i >= numPicked && `#${i - numPicked + 1} Similar: `}
             {stationDescriptions.get(s.name)}{" "}
-            {i < nPrimaryStations && (
+            {i < numPicked && (
               <>
                 <button onClick={() => deleteStation(s.name)}>Delete</button>{" "}
               </>
@@ -287,7 +287,7 @@ function DescribeStations({
             <th rowSpan={2}>
               %<sub>ile</sub>
             </th>
-            {showStations.map(({ val: s, valIdx: sidx }) => (
+            {stationsInPage.map(({ val: s, valIdx: sidx }) => (
               <th
                 key={s.name}
                 colSpan={2}
@@ -300,7 +300,7 @@ function DescribeStations({
             <th rowSpan={2}>(notes)</th>
           </tr>
           <tr>
-            {showStations.map((_, i) => (
+            {stationsInPage.map((_, i) => (
               <Fragment key={i}>
                 <th>Low</th>
                 <th>High</th>
@@ -312,7 +312,7 @@ function DescribeStations({
           {ps.map((p, i) => (
             <tr key={p}>
               <td>{(p * 100).toFixed(1)}%</td>
-              {showStations.map(({ val: s }) => (
+              {stationsInPage.map(({ val: s }) => (
                 <Fragment key={s.name}>
                   <td>{s.summary.lows[i]} °C</td>
                   <td>{s.summary.his[i]} °C</td>
@@ -391,9 +391,9 @@ export default function App({
 }) {
   const tree = useMemo(() => stationToTree(stationsPayload.stations), []);
 
-  const [stationsOfInterest, setStationsOfInterest] = useState<
-    StationWithSummary[]
-  >([]);
+  const [pickedStations, setPickedStations] = useState<StationWithSummary[]>(
+    []
+  );
   const [camera, setCamera] = useState({
     center: [0, 0] as [number, number],
     pointsToFit: [] as [number, number][],
@@ -401,11 +401,11 @@ export default function App({
   const [similarTo, setSimilarTo] = useState<SimilarStations>(defaultSimilarTo);
   const [nPerPage, setNPerPage] = useState(5);
   const [firstRestIdx, setFirstRestIdx] = useState(1);
-  const primaryAndSecondaryStations = stationsOfInterest.concat(
+  const pickedAndSimilarStations = pickedStations.concat(
     similarTo.similarStations.slice(0, similarTo.numToShow)
   );
   const show = paginateWithFirst(
-    primaryAndSecondaryStations,
+    pickedAndSimilarStations,
     nPerPage,
     firstRestIdx
   );
@@ -413,8 +413,8 @@ export default function App({
     const ret = firstRestIdx + n;
     if (ret <= 1) {
       setFirstRestIdx(1);
-    } else if (ret >= primaryAndSecondaryStations.length - 1) {
-      setFirstRestIdx(primaryAndSecondaryStations.length - 1);
+    } else if (ret >= pickedAndSimilarStations.length - 1) {
+      setFirstRestIdx(pickedAndSimilarStations.length - 1);
     } else {
       setFirstRestIdx(ret);
     }
@@ -435,14 +435,14 @@ export default function App({
         targetStation,
         similarStations,
       }));
-      setStationsOfInterest((curr) => {
+      setPickedStations((curr) => {
         if (curr.find((s) => s.name === targetStation.name)) {
           return curr;
         }
         return curr.concat(targetStation);
       });
     },
-    [setSimilarTo, setStationsOfInterest]
+    [setSimilarTo, setPickedStations]
   );
 
   useEffect(() => {
@@ -456,12 +456,12 @@ export default function App({
           found[hit] = s;
         }
       }
-      setStationsOfInterest(found.filter((s) => !!s));
+      setPickedStations(found.filter((s) => !!s));
     }
   }, []);
   useEffect(() => {
-    saveUrl(stationsOfInterest);
-  }, [stationsOfInterest]);
+    saveUrl(pickedStations);
+  }, [pickedStations]);
 
   return (
     <>
@@ -481,7 +481,7 @@ export default function App({
       <MapStationsDynamic
         setSimilarTo={(s) => processSimilar(s)}
         setStation={(newStation: StationWithSummary) => {
-          setStationsOfInterest((curr) => {
+          setPickedStations((curr) => {
             if (curr.find((s) => s.name === newStation.name)) {
               // Don't add duplicates
               return curr;
@@ -491,9 +491,9 @@ export default function App({
         }}
         camera={camera}
         stationsPayload={stationsPayload}
-        showStations={show}
-        primarySecondaryStations={primaryAndSecondaryStations}
-        nPrimaryStations={stationsOfInterest.length}
+        stationsInPage={show}
+        pickedAndSimilarStations={pickedAndSimilarStations}
+        numPicked={pickedStations.length}
         targetStation={similarTo.targetStation}
       />
       <h2>Visualization of high/low temperature percentiles</h2>
@@ -514,14 +514,14 @@ export default function App({
         </button>{" "}
         |{" "}
         <button
-          disabled={firstRestIdx >= primaryAndSecondaryStations.length - 1}
+          disabled={firstRestIdx >= pickedAndSimilarStations.length - 1}
           onClick={() => flipPage(1)}
           title="Step ahead one"
         >
           →
         </button>{" "}
         <button
-          disabled={firstRestIdx >= primaryAndSecondaryStations.length - 1}
+          disabled={firstRestIdx >= pickedAndSimilarStations.length - 1}
           onClick={() => flipPage(nPerPage - 1)}
           title="Jump ahead"
         >
@@ -536,9 +536,9 @@ export default function App({
           onChange={(e) => setNPerPage(Math.max(2, +e.target.value))}
         />{" "}
         <button
-          disabled={stationsOfInterest.length === 0}
+          disabled={pickedStations.length === 0}
           onClick={() => {
-            setStationsOfInterest([]);
+            setPickedStations([]);
             setSimilarTo(defaultSimilarTo);
           }}
         >
@@ -552,12 +552,12 @@ export default function App({
         </button>
       </p>
       <DescribeStations
-        showStations={show}
-        primarySecondaryStations={primaryAndSecondaryStations}
-        nPrimaryStations={stationsOfInterest.length}
+        stationsInPage={show}
+        pickedAndSimilarStations={pickedAndSimilarStations}
+        numPicked={pickedStations.length}
         ps={stationsPayload.percentiles}
         deleteStation={(name) =>
-          setStationsOfInterest((curr) => curr.filter((s) => s.name !== name))
+          setPickedStations((curr) => curr.filter((s) => s.name !== name))
         }
         setSimilarTo={(s) => processSimilar(s)}
         selectLocation={(lat, lon) => {

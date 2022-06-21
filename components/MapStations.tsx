@@ -20,9 +20,9 @@ interface MapStationsProps {
   camera: { center: [number, number]; pointsToFit: [number, number][] };
   setStation: (station: StationWithSummary) => void;
   setSimilarTo: (station: StationWithSummary) => void;
-  showStations: PaginatedStations;
-  primarySecondaryStations: StationWithSummary[];
-  nPrimaryStations: number;
+  stationsInPage: PaginatedStations;
+  pickedAndSimilarStations: StationWithSummary[];
+  numPicked: number;
   targetStation: StationWithSummary | undefined;
 }
 function MapStations({
@@ -30,9 +30,9 @@ function MapStations({
   stationsPayload: { stations },
   setStation,
   setSimilarTo,
-  showStations,
-  primarySecondaryStations,
-  nPrimaryStations,
+  stationsInPage,
+  pickedAndSimilarStations,
+  numPicked,
   targetStation,
 }: MapStationsProps) {
   const [map, setMap] = useState<Map | null>(null);
@@ -80,7 +80,7 @@ function MapStations({
 
   useEffect(() => {
     if (map) {
-      const primary = primarySecondaryStations.slice(0, nPrimaryStations);
+      const primary = pickedAndSimilarStations.slice(0, numPicked);
       let circles = primary.map((o, i) =>
         L.circleMarker(stat2ll(o), {
           color: "orange",
@@ -92,10 +92,10 @@ function MapStations({
           .bindPopup(`(${i + 1})`)
       );
       if (targetStation) {
-        const shownNames = new Set(showStations.map((s) => s.val.name));
-        const secondary = primarySecondaryStations.slice(nPrimaryStations);
+        const shownNames = new Set(stationsInPage.map((s) => s.val.name));
+        const similars = pickedAndSimilarStations.slice(numPicked);
         circles = circles.concat(
-          secondary.map((o, i) =>
+          similars.map((o, i) =>
             L.circleMarker(stat2ll(o), {
               fillColor: "orange",
               fillOpacity: shownNames.has(o.name) ? 0.5 : 0.25,
@@ -106,7 +106,7 @@ function MapStations({
               .bindPopup(`#${i + 1} Similar`)
           )
         );
-        const lines = secondary.map((o, i) =>
+        const lines = similars.map((o, i) =>
           L.polyline([stat2ll(targetStation), stat2ll(o)], {
             color: "orange",
             opacity: shownNames.has(o.name) ? 0.5 : 0.25,
@@ -114,7 +114,7 @@ function MapStations({
             .addTo(map)
             .bindPopup(`#${i + 1} Similar`)
         );
-        const texts = secondary.map((o, i) =>
+        const texts = similars.map((o, i) =>
           shownNames.has(o.name)
             ? L.marker(stat2ll(o), {
                 icon: L.divIcon({
@@ -125,7 +125,7 @@ function MapStations({
             : undefined
         );
         map.fitBounds(
-          secondary.map((s) => [s.lat, s.lon]),
+          similars.map((s) => [s.lat, s.lon]),
           { animate: true }
         );
         return () => {
@@ -139,13 +139,7 @@ function MapStations({
         circles.forEach((x) => x.remove());
       };
     }
-  }, [
-    map,
-    showStations,
-    primarySecondaryStations,
-    nPrimaryStations,
-    targetStation,
-  ]);
+  }, [map, stationsInPage, pickedAndSimilarStations, numPicked, targetStation]);
 
   return <>{displayMap}</>;
 }
