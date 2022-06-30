@@ -2,6 +2,14 @@
 ## Web app
 There's a React web app to visualzie this data: https://fasiha.github.io/hareonna/
 
+It produces pretty graphs like [this](https://fasiha.github.io/hareonna/#s:USW00023234,s:USW00094728,s:MCM00045011,s:SNM00048698,s:POM00008501), comparing San Francisco, New York City, Macau, Singapore, and Flores in the Azores:
+
+![Plot of temperature percentiles for San Francisco, New York City, Macau, Singapore, and Flores in the Azores](./plot.png)
+
+and maps like this:
+
+![Map of stations most similar to Flores in the Azores](./map.png)
+
 ## Data generation steps
 Install [Node](https://nodejs.org) and [Git](https://git-scm.com). Run
 ```
@@ -30,13 +38,7 @@ Finally, you need a bunch of Python to render some maps (coming soon to JavaScri
 python plots.py
 ```
 
-This generates a list of most similar weather stations: [closest.md](./closest.md).
-
-And some plots: these are *very* hard to read, sorry! I'll make them into browser apps shortly:
-
-![Zoomed in temperatures](./zoom.png)
-
-![Map](./map.png)
+This generates a list of most similar weather stations: [closest.md](./closest.md) and some plots.
 
 ## Web app build
 I use GitHub Pages to serve the contents of the `gh-pages` branch as a static site on https://fasiha.github.io/hareonna/.
