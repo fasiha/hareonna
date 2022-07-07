@@ -87,7 +87,7 @@ if (require.main === module) {
     if (csvToIndex.size > 0) {
       tar.t({
         sync: true,
-        file: env.HOME + '/Downloads/daily-summaries-latest.tar.gz',
+        file: 'daily-summaries-latest.tar.gz',
         onentry: e => {
           if (csvToIndex.has(e.path)) {
             let data = [];
