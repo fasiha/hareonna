@@ -10,6 +10,8 @@ and maps like this:
 
 ![Map of stations most similar to Flores in the Azores](./map.png)
 
+Here's my [introductory blog post](https://fasiha.github.io/post/hareonna-global-weather/).
+
 ## Data generation steps
 Install [Node](https://nodejs.org) and [Git](https://git-scm.com). Run
 ```

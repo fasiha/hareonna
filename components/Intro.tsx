@@ -44,9 +44,13 @@ function Intro() {
         thrown together in literally a weekend, but I hope you like it!
       </p>
       <p>
-        (The name comes from Makoto Shinkai's film, <em>Weathering with You</em>
-        , originally 『天気の子』, "weather child", where the eponymous child is
-        called 「晴れ女」,{" "}
+        (You might enjoy reading more about this app in my{" "}
+        <a href="https://fasiha.github.io/post/hareonna-global-weather/">
+          blog post
+        </a>{" "}
+        about it. The name comes from Makoto Shinkai's film,{" "}
+        <em>Weathering with You</em>, originally 『天気の子』, "weather child",
+        where the eponymous child is called 「晴れ女」,{" "}
         <a href="https://jisho.org/search/晴れ女">"hareonna"</a>: a woman who
         brings good weather.)
       </p>
